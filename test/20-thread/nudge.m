@@ -24,9 +24,10 @@ static void   test_printf( char *format, ...)
 
 @implementation Foo
 
-- (void) runServer:(id) argument
+- (int) runServer:(id) argument
 {
    test_printf( "* %td\n", _count++);
+   return( MulleThreadGoIdle);
 }
 
 @end
@@ -64,6 +65,7 @@ int   main( int argc, const char * argv[])
    }
    test_printf( "cancel\n");
    [thread cancel];
+   [thread nudge];
    mulle_relativetime_sleep( 0.01);
    test_printf( "join\n");
    [thread mulleJoin];

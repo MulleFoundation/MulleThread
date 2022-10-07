@@ -8,12 +8,15 @@
 #import "MulleThread.h"
 
 
+// thread states do not convey error/completion status
+// thread states are also not "commands" you don't set
+// the state to MulleThreadStateExited and expect
+// the thread to cancel
 enum
 {
-   MulleThreadStartup,
-   MulleThreadIdle,
-   MulleThreadBusy,
-   MulleThreadCancelled  // set by thread if cancel was received
+   MulleThreadStateIdle,
+   MulleThreadStateBusy,
+   MulleThreadStateExited  // set by thread when main exits
 };
 
 
@@ -40,7 +43,7 @@ enum
 {
    [super init];
 
-   _threadLock = [[NSConditionLock alloc] initWithCondition:MulleThreadStartup];
+   _threadLock = [[NSConditionLock alloc] initWithCondition:MulleThreadStateIdle];
 
    return( self);
 }
@@ -54,51 +57,110 @@ enum
 }
 
 
-- (void) nudge
+#ifndef NDEBUG
+- (void) assertMainThreadTargetSelector
 {
-   [_threadLock mulleLockWhenNotCondition:MulleThreadStartup];
-   [_threadLock unlockWithCondition:MulleThreadBusy];
-}
+   NSMethodSignature   *signature;
+   char                *returnType;
 
+   if( ! _target)
+      return;
 
-- (void) cancel
-{
-   [super cancel];
-   [self nudge];
+   signature  = [_target methodSignatureForSelector:_selector];
+   assert( signature);
+   returnType = [signature methodReturnType];
+   // return value of function or _target/selector must be int
+   assert( *returnType == _C_INT);
 }
+#endif
 
 
 - (void) main
 {
    NSAutoreleasePool   *pool;
+   NSUInteger          condition;
 
    pool = [NSAutoreleasePool new];
+
+#ifndef NDEBUG
+   [self assertMainThreadTargetSelector];
+#endif
+
    for(;;)
    {
-      [_threadLock mulleLockWhenNotCondition:MulleThreadIdle];
+      // MulleThreadStateIdle,
+      // MulleThreadStateBusy,
+      [_threadLock mulleLockWhenNotCondition:MulleThreadStateIdle];
 
-      if( [self isCancelled])
+      _rval = MulleThreadContinueMain;
+      for(;;)
       {
-         [_threadLock unlockWithCondition:MulleThreadCancelled];
-         break;
+         if( [self isCancelled])
+            goto done;
+
+         if( _rval != MulleThreadContinueMain)
+            break;
+
+         [pool mulleReleaseAllObjects];
+         [super main];
       }
 
-      [_threadLock unlockWithCondition:MulleThreadIdle];
+      if( _rval == MulleThreadCancelMain)
+         goto done;
 
-      [pool mulleReleaseAllObjects];
-      [super main];
+      [_threadLock unlockWithCondition:MulleThreadStateIdle];
    }
 
+done:
+   [_threadLock unlockWithCondition:MulleThreadStateExited];
    [pool release];
+}
+
+
+- (void) nudge
+{
+   // if exited, don't do anything, if busy don't do anything
+   if( [_threadLock tryLockWhenCondition:MulleThreadStateIdle])
+      [_threadLock unlockWithCondition:MulleThreadStateBusy];
 }
 
 
 - (void) mulleJoin
 {
-   [_threadLock lockWhenCondition:MulleThreadCancelled];
-   [_threadLock unlockWithCondition:MulleThreadCancelled];
+   [_threadLock lockWhenCondition:MulleThreadStateExited];
+   [_threadLock unlockWithCondition:MulleThreadStateExited];
 }
 
+
+- (void) cancelWhenIdle
+{
+   NSUInteger   condition;
+
+   [_threadLock mulleLockWhenNotCondition:MulleThreadStateBusy];
+   condition = [_threadLock condition];
+   if( condition != MulleThreadStateExited)
+   {
+      [self cancel];   // set NSThread cancel flag
+      condition = MulleThreadStateBusy;
+   }
+   [_threadLock unlockWithCondition:condition];
+}
+
+
+- (void) preempt
+{
+   [self cancel];   // set NSThread cancel flag
+   [self nudge];
+}
+
+
+- (void) start
+{
+   // ensure it's in Idle the first time
+   if( [_threadLock mulleTryLockWhenNotCondition:MulleThreadStateIdle])
+      [_threadLock unlockWithCondition:MulleThreadStateIdle];
+   [super start];
+}
 
 @end
 

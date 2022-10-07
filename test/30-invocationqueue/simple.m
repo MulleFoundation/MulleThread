@@ -41,11 +41,11 @@ int   main( int argc, const char * argv[])
    foo = [Foo object];
    [queue setDelegate:foo];
    [queue setMessageDelegateOnExecutionThread:YES];
-   [queue setPedanticStateChanges:YES];
+
+   s = mulle_strdup( "VfL Bochum 1848");
 
    @autoreleasepool
    {
-      s = mulle_strdup( "VfL Bochum 1848");
       invocation = [NSInvocation mulleInvocationWithTarget:foo
          selector:@selector( printUTF8String:), s];
 
@@ -57,7 +57,8 @@ int   main( int argc, const char * argv[])
 
    [queue addFinalInvocation:invocation];
 
-   [queue invokeAll];
+   [queue invokeNextInvocation:nil];
+   [queue invokeNextInvocation:nil];
 
    mulle_free( s);
 

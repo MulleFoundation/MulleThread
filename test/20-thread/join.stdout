@@ -1,0 +1,8 @@
+create
+start
+sleep
+* start
+join
+* cancel
+* stop
+exit

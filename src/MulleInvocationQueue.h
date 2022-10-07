@@ -59,20 +59,25 @@ static inline char   *MulleInvocationQueueStateUTF8String( NSUInteger options)
 @property( readonly, retain) NSInvocation              *failedInvocation;
 @property( readonly, retain) id                        exception;
 
+// TODO make this optiona and set atomically
 @property( assign) BOOL   doneOnEmptyQueue;                 // send "done", whenever queue is empty (NO)
 @property( assign) BOOL   catchesExceptions;                // cancel on exception (NO)
 @property( assign) BOOL   ignoresCaughtExceptions;          // (NO)
 @property( assign) BOOL   cancelsOnFailedReturnStatus;      // (NO)
 @property( assign) BOOL   messageDelegateOnExecutionThread; // (NO)
-@property( assign) BOOL   pedanticStateChanges;             // (NO)
+@property( assign) BOOL   terminateWaitsForCompletion;      // don't terminate before complete (NO)
 
 
 + (instancetype) invocationQueue;
 - (instancetype) initWithCapacity:(NSUInteger) capacity;
 
 - (BOOL) poll;
-- (void) run;
-- (void) invokeAll;
+- (int) invokeNextInvocation:(id) sender;  // unused sender
+
+- (int) terminate;  // calls cancel if not appShouldWaitForCompletion, else blocks
+- (void) preempt;
+- (void) cancelWhenIdle;
+- (void) start;
 
 - (void) addInvocation:(NSInvocation *) invocation;
 - (void) addFinalInvocation:(NSInvocation *) invocation;

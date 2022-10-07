@@ -15,6 +15,18 @@
 #import "import.h"
 
 
+// Values returned from target/selector
+// OK will rerun after cancel check.
+// Error will cancel,
+// Idle will wait for a nudge
+//
+enum
+{
+   MulleThreadGoIdle        = 0,
+   MulleThreadContinueMain  = 1,
+   MulleThreadCancelMain    = -1
+};
+
 //
 // This thread object contains a threadLock. The first time the
 // thread is started it will execute target/selector (from -main).
@@ -26,8 +38,17 @@
 
 @property( readonly, retain) NSConditionLock   *threadLock;
 
+// wake up thread, do not call from "within" thread
 - (void) nudge;
-- (void) cancel;
+
+// use cancelWhenIdle to safely close down the thread, don't call from
+// "within" thread
+- (void) cancelWhenIdle;
+
+// use preempt to cancel ASAP. Do not call from "within" thread
+- (void) preempt;
+
+// if the thread idles, this will wait forever, do not call from "within" thread
 - (void) mulleJoin;
 
 @end

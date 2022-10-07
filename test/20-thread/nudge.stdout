@@ -1,6 +1,7 @@
 create
 start
 sleep
+nudge
 * 0
 nudge
 * 1
@@ -200,7 +201,5 @@ nudge
 * 98
 nudge
 * 99
-nudge
-* 100
 cancel
 join
