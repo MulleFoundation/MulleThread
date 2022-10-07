@@ -26,7 +26,11 @@ static void   test_printf( char *format, ...)
 
 - (int) runServer:(id) argument
 {
-   test_printf( "* %td\n", _count++);
+   test_printf( "* start\n");
+   mulle_relativetime_sleep( 0.5);
+   test_printf( "* cancel\n");
+   [[NSThread currentThread] cancel];
+   test_printf( "* stop\n");
    return( MulleThreadGoIdle);
 }
 
@@ -53,22 +57,14 @@ int   main( int argc, const char * argv[])
                                         object:nil];
    test_printf( "start\n");
    [thread start];
-   test_printf( "sleep\n");
-   mulle_relativetime_sleep( 0.1);
-
-   for( i = 0; i < 100; i++)
-   {
-      test_printf( "nudge\n");
-      [thread nudge];
-
-      mulle_relativetime_sleep( 0.01);
-   }
-   test_printf( "cancel\n");
-   [thread cancel];
    [thread nudge];
-   mulle_relativetime_sleep( 0.01);
+
+   test_printf( "sleep\n");
+   mulle_relativetime_sleep( 0.25);
+
    test_printf( "join\n");
    [thread mulleJoin];
+   test_printf( "exit\n");
 
    return( 0);
 }

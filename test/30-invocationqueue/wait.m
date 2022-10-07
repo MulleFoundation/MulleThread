@@ -16,9 +16,11 @@
    printf( "%s\n", MulleInvocationQueueStateUTF8String( state));
 }
 
-- (void) printUTF8String:(char *) s
+- (void) sleep
 {
-   printf( "%s\n", s);
+   printf( "* sleeping\n");
+   mulle_relativetime_sleep( 0.5);
+   printf( "* awake\n");
 }
 
 @end
@@ -27,40 +29,36 @@
 int   main( int argc, const char * argv[])
 {
    MulleInvocationQueue   *queue;
-   NSInvocation        *invocation;
-   char                *s;
-   Foo                 *foo;
+   NSInvocation           *invocation;
+   Foo                    *foo;
 
 #ifdef __MULLE_OBJC__
    if( mulle_objc_global_check_universe( __MULLE_OBJC_UNIVERSENAME__) != mulle_objc_universe_is_ok)
       return( 1);
 #endif
 
-   queue  = [MulleInvocationQueue invocationQueue];
+   printf( "create\n");
+   queue = [MulleInvocationQueue invocationQueue];
 
    foo = [Foo object];
+
    [queue setDelegate:foo];
    [queue setMessageDelegateOnExecutionThread:YES];
-
-   s = mulle_strdup( "VfL Bochum 1848");
-
-   @autoreleasepool
-   {
-      invocation = [NSInvocation mulleInvocationWithTarget:foo
-         selector:@selector( printUTF8String:), s];
-
-      [queue addInvocation:invocation];
-   }
+   [queue setTerminateWaitsForCompletion:YES];
 
    invocation = [NSInvocation mulleInvocationWithTarget:foo
-      selector:@selector( printUTF8String:), s];
+      selector:@selector( sleep)];
 
+   printf( "add\n");
    [queue addFinalInvocation:invocation];
 
-   [queue invokeNextInvocation:nil];
-   [queue invokeNextInvocation:nil];
+   printf( "start\n");
+   [queue start];
 
-   mulle_free( s);
+   printf( "terminate\n");
+   [queue terminate];
+
+   printf( "exit\n");
 
    return( 0);
 }

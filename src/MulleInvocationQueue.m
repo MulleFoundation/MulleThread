@@ -44,9 +44,23 @@ NS_OPTIONS_TABLE( MulleInvocationQueueState, 7) =
 }
 
 
+#ifdef DEBUG
+- (id) retain
+{
+   return( [super retain]);
+}
+#endif
+
+
 - (void) finalize
 {
-   [_executionThread cancel];
+   [self terminate];
+
+   // get rid of invocations, which retain stuff
+   [self _discardInvocations];
+   [_finalInvocation autorelease];
+   _finalInvocation = nil;
+
    [super finalize];
 }
 
@@ -55,11 +69,12 @@ NS_OPTIONS_TABLE( MulleInvocationQueueState, 7) =
 {
    NSInvocation   *invocation;
 
-   [_executionThread mulleJoin];
    [_executionThread release];
+   [_exception release];
 
-   [self _discardInvocations];
-
+   // safety...
+   while( invocation = mulle_pointerqueue_pop( &_queue))
+      [invocation release];
    mulle_pointerqueue_done( &_queue);
 
    [super dealloc];
@@ -128,89 +143,105 @@ NS_OPTIONS_TABLE( MulleInvocationQueueState, 7) =
 }
 
 
-- (void) invokeAll
+- (int) invokeNextInvocation:(id) unused
 {
    NSInvocation   *invocation;
 
    assert( [self isExecutionThread]);
 
-   if( _pedanticStateChanges)
-      [self _setState:MulleInvocationQueueRun];
-
-   for(;;)
+   invocation = mulle_pointerqueue_pop( &_queue);
+   if( ! invocation)
    {
-      invocation = mulle_pointerqueue_pop( &_queue);
-      if( ! invocation)
+      if( _doneOnEmptyQueue)
       {
-         if( _doneOnEmptyQueue)
-         {
-            [self _finalizing:invocation];  // do this before _setState:
-            [self _setState:MulleInvocationQueueDone];
-         }
-         break;
+         [self _finalizing:invocation];  // do this before _setState:
+         [self _setState:MulleInvocationQueueDone];
       }
+      return( MulleThreadGoIdle);
+   }
 
-      invocation = [invocation autorelease];
+   invocation = [invocation autorelease];
 
-      if( _catchesExceptions)
-      {
-         @try
-         {
-            [invocation invoke];
-         }
-         @catch( NSObject *exception)
-         {
-            if( _ignoresCaughtExceptions)
-               continue;
-
-            [_exception autorelease];
-            _exception = [exception retain];
-
-            [self _discardInvocations];
-            [self _setState:MulleInvocationQueueException];
-            return;
-         }
-      }
-      else
+   if( _catchesExceptions)
+   {
+      @try
       {
          [invocation invoke];
       }
-
-      if( _cancelsOnFailedReturnStatus && [invocation mulleReturnStatus])
+      @catch( NSObject *exception)
       {
+         if( _ignoresCaughtExceptions)
+            return( MulleThreadContinueMain);
+
+         [_exception autorelease];
+         _exception = [exception retain];
+
          [self _discardInvocations];
-         [self _setState:MulleInvocationQueueError];
-         return;
-      }
-
-      if( _finalInvocation == invocation)
-      {
-         [self _setState:MulleInvocationQueueDone];
-         [self _finalizing:invocation]; // do this after _setState:
-         return;
+         [self _setState:MulleInvocationQueueException];
+         return( MulleThreadCancelMain);
       }
    }
+   else
+   {
+      [invocation invoke];
+   }
 
-   if( _pedanticStateChanges)
-      [self _setState:MulleInvocationQueueIdle];
+   if( _cancelsOnFailedReturnStatus && [invocation mulleReturnStatus])
+   {
+      [self _discardInvocations];
+      [self _setState:MulleInvocationQueueError];
+      return( MulleThreadCancelMain);
+   }
 
+   if( _finalInvocation == invocation)
+   {
+      [self _setState:MulleInvocationQueueDone];
+      [self _finalizing:invocation]; // do this after _setState:
+      return( MulleThreadCancelMain);
+   }
+
+   return( MulleThreadGoIdle);
 }
 
 
-- (void) run
+- (void) start
 {
+   NSUInteger   options;
+
    if( ! _executionThread)
-      _executionThread = [MulleThread mulleThreadWithTarget:self
-                                                   selector:@selector( invokeAll)
-                                                     object:nil];
-   [self _setState:MulleInvocationQueueIdle];
+   {
+      options = MulleThreadDontRetainTarget|MulleThreadDontReleaseTarget;
+      _executionThread = [[MulleThread alloc] mulleInitWithTarget:self
+                                                        selector:@selector( invokeNextInvocation:)
+                                                          object:nil
+                                                         options:options];
+   }
    [_executionThread start];
 }  
 
 
-- (void) cancel
+- (void) preempt
 {
-   [_executionThread cancel];
+   [_executionThread preempt];
+}
+
+
+- (void) cancelWhenIdle
+{
+   [_executionThread cancelWhenIdle];
+}
+
+
+- (int) terminate
+{
+   if( ! _executionThread)
+      return( -1);
+
+   if( _terminateWaitsForCompletion)
+      [_executionThread cancelWhenIdle];
+   else
+      [_executionThread preempt];
+   return( 0);
 }
 
 
