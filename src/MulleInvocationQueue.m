@@ -15,10 +15,12 @@
 @class MulleInvocationQueue;
 
 
-NS_OPTIONS_TABLE( MulleInvocationQueueState, 7) =
+NS_OPTIONS_TABLE( MulleInvocationQueueState, 9) =
 {
+   NS_OPTIONS_ITEM( MulleInvocationQueueInit),
    NS_OPTIONS_ITEM( MulleInvocationQueueIdle),
    NS_OPTIONS_ITEM( MulleInvocationQueueRun),
+   NS_OPTIONS_ITEM( MulleInvocationQueueEmpty),
    NS_OPTIONS_ITEM( MulleInvocationQueueDone),
    NS_OPTIONS_ITEM( MulleInvocationQueueError),
    NS_OPTIONS_ITEM( MulleInvocationQueueException),
@@ -38,6 +40,7 @@ NS_OPTIONS_TABLE( MulleInvocationQueueState, 7) =
 
 - (instancetype) initWithCapacity:(NSUInteger) capacity
 {
+   mulle_thread_mutex_init( &_queueLock);
    mulle_pointerqueue_init( &_queue, capacity / 8, 8, MulleObjCInstanceGetAllocator( self));
 
    return( self);
@@ -72,10 +75,12 @@ NS_OPTIONS_TABLE( MulleInvocationQueueState, 7) =
    [_executionThread release];
    [_exception release];
 
-   // safety...
+
+   // safety..., no need to lock though
    while( invocation = mulle_pointerqueue_pop( &_queue))
       [invocation release];
    mulle_pointerqueue_done( &_queue);
+   mulle_thread_mutex_done( &_queueLock);
 
    [super dealloc];
 }
@@ -89,7 +94,11 @@ NS_OPTIONS_TABLE( MulleInvocationQueueState, 7) =
 
 - (NSUInteger) state
 {
-   return( (NSUInteger) _mulle_atomic_pointer_read( &_state));
+   NSUInteger   state;
+
+   state = (NSUInteger) _mulle_atomic_pointer_read( &_state);
+   fprintf( stderr, "queue %p state is %s\n", self, MulleInvocationQueueStateUTF8String( state));
+   return( state);
 }
 
 
@@ -106,12 +115,26 @@ NS_OPTIONS_TABLE( MulleInvocationQueueState, 7) =
 }
 
 
+- (NSUInteger) numberOfInvocations
+{
+   NSUInteger   count;
+
+   mulle_thread_mutex_lock( &_queueLock);
+   count = mulle_pointerqueue_get_count( &_queue);
+   mulle_thread_mutex_unlock( &_queueLock);
+   return( count);
+}
+
+
 - (void) addInvocation:(NSInvocation *) invocation
 {
    [invocation retainArguments];
    [invocation retain];
 
+   mulle_thread_mutex_lock( &_queueLock);
    mulle_pointerqueue_push( &_queue, invocation);
+   mulle_thread_mutex_unlock( &_queueLock);
+
    [_executionThread nudge];
 }
 
@@ -129,8 +152,10 @@ NS_OPTIONS_TABLE( MulleInvocationQueueState, 7) =
 {
    NSInvocation   *invocation;
 
+   mulle_thread_mutex_lock( &_queueLock);
    while( invocation = mulle_pointerqueue_pop( &_queue))
       [invocation autorelease];
+   mulle_thread_mutex_unlock( &_queueLock);
 }
 
 
@@ -149,18 +174,27 @@ NS_OPTIONS_TABLE( MulleInvocationQueueState, 7) =
 
    assert( [self isExecutionThread]);
 
+   mulle_thread_mutex_lock( &_queueLock);
    invocation = mulle_pointerqueue_pop( &_queue);
+   mulle_thread_mutex_unlock( &_queueLock);
+
    if( ! invocation)
    {
       if( _doneOnEmptyQueue)
       {
          [self _finalizing:invocation];  // do this before _setState:
          [self _setState:MulleInvocationQueueDone];
+         return( MulleThreadGoIdle);
       }
+      [self _setState:MulleInvocationQueueEmpty];
       return( MulleThreadGoIdle);
    }
 
+   [self _setState:MulleInvocationQueueRun];
+
    invocation = [invocation autorelease];
+   if( _trace)
+      fprintf( stderr, "queue %p executes %s", self, [invocation invocationUTF8String]);
 
    if( _catchesExceptions)
    {
@@ -200,7 +234,7 @@ NS_OPTIONS_TABLE( MulleInvocationQueueState, 7) =
       return( MulleThreadCancelMain);
    }
 
-   return( MulleThreadGoIdle);
+   return( MulleThreadContinueMain);
 }
 
 
@@ -210,7 +244,7 @@ NS_OPTIONS_TABLE( MulleInvocationQueueState, 7) =
 
    if( ! _executionThread)
    {
-      options = MulleThreadDontRetainTarget|MulleThreadDontReleaseTarget;
+      options          = MulleThreadDontRetainTarget|MulleThreadDontReleaseTarget;
       _executionThread = [[MulleThread alloc] mulleInitWithTarget:self
                                                         selector:@selector( invokeNextInvocation:)
                                                           object:nil
@@ -228,7 +262,31 @@ NS_OPTIONS_TABLE( MulleInvocationQueueState, 7) =
 
 - (void) cancelWhenIdle
 {
-   [_executionThread cancelWhenIdle];
+   NSUInteger   state;
+
+   for(;;)
+   {
+      state = [self state];
+      switch( state & ~MulleInvocationQueueNotified)
+      {
+      case MulleInvocationQueueInit      :
+         [_executionThread nudge];
+         break;
+
+      case MulleInvocationQueueRun       :
+         break;
+
+      case MulleInvocationQueueIdle      :
+      case MulleInvocationQueueEmpty     :
+      case MulleInvocationQueueDone      :
+      case MulleInvocationQueueError     :
+      case MulleInvocationQueueException :
+      case MulleInvocationQueueCancel    :
+         [_executionThread cancelWhenIdle];
+         return;
+      }
+      [_executionThread blockUntilNoLongerBusy];
+   }
 }
 
 
@@ -238,7 +296,7 @@ NS_OPTIONS_TABLE( MulleInvocationQueueState, 7) =
       return( -1);
 
    if( _terminateWaitsForCompletion)
-      [_executionThread cancelWhenIdle];
+      [self cancelWhenIdle];
    else
       [_executionThread preempt];
    return( 0);
