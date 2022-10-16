@@ -45,6 +45,11 @@ enum
 // "within" thread
 - (void) cancelWhenIdle;
 
+// This waits until idle or exited. Of course this is just a snapshot
+// of the past, and the thread may well have become busy again (unless
+// you can ascertain, noone nudges it)
+- (void) blockUntilNoLongerBusy;
+
 // use preempt to cancel ASAP. Do not call from "within" thread
 - (void) preempt;
 

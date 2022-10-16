@@ -15,23 +15,53 @@
 
 typedef NS_OPTIONS( NSUInteger, MulleInvocationQueueState)
 {
-   MulleInvocationQueueIdle = 0,               // in the beginning or when empty
-   MulleInvocationQueueRun,                    // queue is executing
-   MulleInvocationQueueDone,                   // all invocations till final processed
-   MulleInvocationQueueError,                  // cancel request fulfilled by "execution"
+   MulleInvocationQueueInit = 0,                  // in the beginning
+   MulleInvocationQueueIdle,                      // when empty
+   MulleInvocationQueueRun,                       // queue is executing
+   MulleInvocationQueueEmpty,                     // all invocations processed
+   MulleInvocationQueueDone,                      // all invocations till final processed
+   MulleInvocationQueueError,                     // cancel request fulfilled by "execution"
    MulleInvocationQueueException,
    MulleInvocationQueueCancel,
-   MulleInvocationQueueNotified = 0x8000,           // "main" has notified
+   MulleInvocationQueueNotified = 0x8000,         // "main" has notified
 };
 
 
 MULLE_INVOCATION_QUEUE_GLOBAL
-NS_OPTIONS_TABLE( MulleInvocationQueueState, 7);
+NS_OPTIONS_TABLE( MulleInvocationQueueState, 9);
 
 
 static inline char   *MulleInvocationQueueStateUTF8String( NSUInteger options)
 {
    return( NS_OPTIONS_PRINT( MulleInvocationQueueState, options));
+}
+
+
+static BOOL   MulleInvocationQueueStateIsFinished( NSUInteger state)
+{
+   state &= ~MulleInvocationQueueNotified;
+   switch( state)
+   {
+   default                            : return( NO);
+   case MulleInvocationQueueEmpty     :
+   case MulleInvocationQueueCancel    :
+   case MulleInvocationQueueException :
+   case MulleInvocationQueueDone      : return( YES);
+   }
+}
+
+static BOOL   MulleInvocationQueueStateCanBeCancelled( NSUInteger state)
+{
+   state &= ~MulleInvocationQueueNotified;
+   switch( state)
+   {
+   default                            : return( NO);
+   case MulleInvocationQueueIdle      :
+   case MulleInvocationQueueCancel    :
+   case MulleInvocationQueueException :
+   case MulleInvocationQueueEmpty     :
+   case MulleInvocationQueueDone      : return( YES);
+   }
 }
 
 
@@ -48,10 +78,11 @@ static inline char   *MulleInvocationQueueStateUTF8String( NSUInteger options)
 
 @interface MulleInvocationQueue : NSObject
 {
-   struct mulle_pointerqueue   _queue;
-   mulle_atomic_pointer_t      _state;
-   NSInvocation                *_finalInvocation;
-   BOOL                        _notified;
+   mulle_thread_mutex_t          _queueLock;
+   struct mulle_pointerqueue     _queue;
+   mulle_atomic_pointer_t        _state;
+   NSInvocation                  *_finalInvocation;
+   BOOL                          _notified;
 }
 
 @property( assign) id <MulleInvocationQueueDelegate>   delegate;
@@ -60,6 +91,7 @@ static inline char   *MulleInvocationQueueStateUTF8String( NSUInteger options)
 @property( readonly, retain) id                        exception;
 
 // TODO make this optiona and set atomically
+@property( assign) BOOL   trace;                            // send "done", whenever queue is empty (NO)
 @property( assign) BOOL   doneOnEmptyQueue;                 // send "done", whenever queue is empty (NO)
 @property( assign) BOOL   catchesExceptions;                // cancel on exception (NO)
 @property( assign) BOOL   ignoresCaughtExceptions;          // (NO)

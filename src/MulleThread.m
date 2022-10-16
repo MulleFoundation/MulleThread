@@ -20,6 +20,8 @@ enum
 };
 
 
+#define MAIN_DEBUG
+
 @implementation MulleThread
 
 + (void) detachNewThreadSelector:(SEL) sel
@@ -80,17 +82,22 @@ enum
    NSAutoreleasePool   *pool;
    NSUInteger          condition;
 
-   pool = [NSAutoreleasePool new];
-
 #ifndef NDEBUG
    [self assertMainThreadTargetSelector];
 #endif
 
+   pool = [NSAutoreleasePool new];
    for(;;)
    {
       // MulleThreadStateIdle,
       // MulleThreadStateBusy,
+#ifdef MAIN_DEBUG
+      fprintf( stderr, "\n***** 0x%tx (%p) waiting on <> idle\n", mulle_thread_self(), self);
+#endif
       [_threadLock mulleLockWhenNotCondition:MulleThreadStateIdle];
+#ifdef MAIN_DEBUG
+      fprintf( stderr, "\n***** 0x%tx (%p) got idle\n", mulle_thread_self(), self);
+#endif
 
       _rval = MulleThreadContinueMain;
       for(;;)
@@ -101,8 +108,11 @@ enum
          if( _rval != MulleThreadContinueMain)
             break;
 
-         [pool mulleReleaseAllObjects];
+#ifdef MAIN_DEBUG
+         fprintf( stderr, "***** 0x%tx (%p) call [super main]\n", mulle_thread_self(), self);
+#endif
          [super main];
+         [pool mulleReleaseAllObjects];
       }
 
       if( _rval == MulleThreadCancelMain)
@@ -114,6 +124,10 @@ enum
 done:
    [_threadLock unlockWithCondition:MulleThreadStateExited];
    [pool release];
+
+#ifdef MAIN_DEBUG
+   fprintf( stderr, "\n***** 0x%tx (%p) is exiting\n\n", mulle_thread_self(), self);
+#endif
 }
 
 
@@ -129,6 +143,16 @@ done:
 {
    [_threadLock lockWhenCondition:MulleThreadStateExited];
    [_threadLock unlockWithCondition:MulleThreadStateExited];
+}
+
+
+- (void) blockUntilNoLongerBusy
+{
+   NSUInteger   condition;
+
+   [_threadLock mulleLockWhenNotCondition:MulleThreadStateBusy];
+   condition = [_threadLock condition];
+   [_threadLock unlockWithCondition:condition];
 }
 
 
@@ -156,7 +180,8 @@ done:
 
 - (void) start
 {
-   // ensure it's in Idle the first time
+   // Ensure it's in Idle the first time. Usually it wil though and this
+   // tryLock fails
    if( [_threadLock mulleTryLockWhenNotCondition:MulleThreadStateIdle])
       [_threadLock unlockWithCondition:MulleThreadStateIdle];
    [super start];

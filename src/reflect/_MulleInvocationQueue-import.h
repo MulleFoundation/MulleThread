@@ -22,3 +22,10 @@
 //    remove for platform: `mulle-sde dependency mark MulleObjCLockFoundation no-platform-<uname>`
 //        (use `mulle-sourcetree-to-c --unames` to list known values)
 #import <MulleObjCLockFoundation/MulleObjCLockFoundation.h>   // MulleObjCLockFoundation
+
+#ifdef __has_include
+# if __has_include( "_MulleInvocationQueue-include.h")
+#  include "_MulleInvocationQueue-include.h"
+# endif
+#endif
+
