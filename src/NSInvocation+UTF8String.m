@@ -51,7 +51,7 @@
                             [self target],
                             MulleObjCSelectorUTF8String( [self selector]));
    }
-   return( s);
+   return( MulleObjCAutoreleaseAllocation( s, NULL));
 }
 
 @end

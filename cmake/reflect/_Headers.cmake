@@ -36,6 +36,7 @@ src/generic/import-private.h
 set( PUBLIC_GENERATED_HEADERS
 src/reflect/_MulleInvocationQueue-export.h
 src/reflect/_MulleInvocationQueue-import.h
+src/reflect/_MulleInvocationQueue-include.h
 )
 
 #
@@ -52,6 +53,7 @@ set( PUBLIC_HEADERS
 src/MulleInvocationQueue.h
 src/MulleThread.h
 src/NSInvocation+MulleReturnStatus.h
+src/NSInvocation+UTF8String.h
 src/generic/MulleObjCLoader+MulleInvocationQueue.h
 )
 
