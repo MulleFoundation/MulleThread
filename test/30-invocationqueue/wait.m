@@ -13,7 +13,7 @@
    NSUInteger   state;
 
    state = [queue state];
-   printf( "%s\n", MulleInvocationQueueStateUTF8String( state));
+   fprintf( stderr, "%s\n", MulleInvocationQueueStateUTF8String( state));
 }
 
 - (void) sleep

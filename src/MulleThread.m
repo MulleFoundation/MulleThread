@@ -80,7 +80,6 @@ enum
 - (void) main
 {
    NSAutoreleasePool   *pool;
-   NSUInteger          condition;
 
 #ifndef NDEBUG
    [self assertMainThreadTargetSelector];

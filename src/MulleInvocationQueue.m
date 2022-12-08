@@ -77,7 +77,7 @@ NS_OPTIONS_TABLE( MulleInvocationQueueState, 9) =
 
 
    // safety..., no need to lock though
-   while( invocation = mulle_pointerqueue_pop( &_queue))
+   while( (invocation = mulle_pointerqueue_pop( &_queue)))
       [invocation release];
    mulle_pointerqueue_done( &_queue);
    mulle_thread_mutex_done( &_queueLock);
@@ -153,7 +153,7 @@ NS_OPTIONS_TABLE( MulleInvocationQueueState, 9) =
    NSInvocation   *invocation;
 
    mulle_thread_mutex_lock( &_queueLock);
-   while( invocation = mulle_pointerqueue_pop( &_queue))
+   while( (invocation = mulle_pointerqueue_pop( &_queue)))
       [invocation autorelease];
    mulle_thread_mutex_unlock( &_queueLock);
 }

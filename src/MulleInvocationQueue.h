@@ -37,7 +37,7 @@ static inline char   *MulleInvocationQueueStateUTF8String( NSUInteger options)
 }
 
 
-static BOOL   MulleInvocationQueueStateIsFinished( NSUInteger state)
+static inline BOOL   MulleInvocationQueueStateIsFinished( NSUInteger state)
 {
    state &= ~MulleInvocationQueueNotified;
    switch( state)
@@ -50,7 +50,7 @@ static BOOL   MulleInvocationQueueStateIsFinished( NSUInteger state)
    }
 }
 
-static BOOL   MulleInvocationQueueStateCanBeCancelled( NSUInteger state)
+static inline BOOL   MulleInvocationQueueStateCanBeCancelled( NSUInteger state)
 {
    state &= ~MulleInvocationQueueNotified;
    switch( state)

@@ -25,7 +25,7 @@ if( NOT __EXECUTABLE_OBJC_CMAKE__)
    #
    # only for mulle-clang
    #
-   if( UNIX AND NOT APPLE)
+   if( UNIX AND NOT (APPLE OR COSMOPOLITAN OR MUSL_STATIC_ONLY))
       if( LINK_PHASE)
          target_link_options( "${EXECUTABLE_LINK_TARGET}"
             PUBLIC
@@ -54,9 +54,3 @@ if( NOT __EXECUTABLE_OBJC_CMAKE__)
    include( ExecutableAuxObjC OPTIONAL)
 
 endif()
-
-
-# extension : mulle-objc/objc-cmake
-# directory : project/all
-# template  : .../ExecutableObjC.cmake
-# Suppress this comment with `export MULLE_SDE_GENERATE_FILE_COMMENTS=NO`

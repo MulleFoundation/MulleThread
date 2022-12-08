@@ -13,7 +13,7 @@
    NSUInteger   state;
 
    state = [queue state];
-   printf( "%s\n", MulleInvocationQueueStateUTF8String( state));
+   fprintf( stderr, "%s\n", MulleInvocationQueueStateUTF8String( state));
 }
 
 - (void) printUTF8String:(char *) s
@@ -27,9 +27,9 @@
 int   main( int argc, const char * argv[])
 {
    MulleInvocationQueue   *queue;
-   NSInvocation        *invocation;
-   char                *s;
-   Foo                 *foo;
+   NSInvocation           *invocation;
+   char                   *s;
+   Foo                    *foo;
 
 #ifdef __MULLE_OBJC__
    if( mulle_objc_global_check_universe( __MULLE_OBJC_UNIVERSENAME__) != mulle_objc_universe_is_ok)
