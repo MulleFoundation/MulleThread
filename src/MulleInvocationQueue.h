@@ -90,7 +90,7 @@ static inline BOOL   MulleInvocationQueueStateCanBeCancelled( NSUInteger state)
 @property( readonly, retain) NSInvocation              *failedInvocation;
 @property( readonly, retain) id                        exception;
 
-// TODO make this optiona and set atomically
+// TODO make this optional and set atomically
 @property( assign) BOOL   trace;                            // send "done", whenever queue is empty (NO)
 @property( assign) BOOL   doneOnEmptyQueue;                 // send "done", whenever queue is empty (NO)
 @property( assign) BOOL   catchesExceptions;                // cancel on exception (NO)
