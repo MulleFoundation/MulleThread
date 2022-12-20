@@ -8,7 +8,7 @@
    "license" : "UNLICENSED",
    "repository" : {
       "type" : "git",
-      "url" : "MulleFoundation/MulleInvocationQueue"
+      "url" : "github:MulleFoundation/MulleInvocationQueue"
    },
    "dependencies" : {
       "MulleObjCLockFoundation" : "git://github.com/MulleFoundation/MulleObjCLockFoundation",
