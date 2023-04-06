@@ -12,16 +12,16 @@
  */
 
 // You can tweak the following #import with these commands.
-// (Use 9F92D0CF-8BBA-4F6B-8D14-6A31BC49FB5B instead of MulleObjCLockFoundation if there are duplicate entries)
-//    remove #import: : `mulle-sde dependency mark MulleObjCLockFoundation no-header`
-//    rename:              `mulle-sde dependency|library set MulleObjCLockFoundation include whatever.h`
-//    reorder:             `mulle-sde dependency move MulleObjCLockFoundation <up|down>`
-//    toggle #import:     `mulle-sde dependency mark MulleObjCLockFoundation [no-]import`
-//    toggle public:       `mulle-sde dependency mark MulleObjCLockFoundation [no-]public`
-//    toggle optional:     `mulle-sde dependency mark MulleObjCLockFoundation [no-]require`
-//    remove for platform: `mulle-sde dependency mark MulleObjCLockFoundation no-platform-<uname>`
+// (Use 46519FAC-A31D-47EF-AFF2-7A636B4844DF instead of MulleFoundationBase if there are duplicate entries)
+//    remove #import: : `mulle-sde dependency mark MulleFoundationBase no-header`
+//    rename:              `mulle-sde dependency|library set MulleFoundationBase include whatever.h`
+//    reorder:             `mulle-sde dependency move MulleFoundationBase <up|down>`
+//    toggle #import:     `mulle-sde dependency mark MulleFoundationBase [no-]import`
+//    toggle public:       `mulle-sde dependency mark MulleFoundationBase [no-]public`
+//    toggle optional:     `mulle-sde dependency mark MulleFoundationBase [no-]require`
+//    remove for platform: `mulle-sde dependency mark MulleFoundationBase no-platform-<uname>`
 //        (use `mulle-sourcetree-to-c --unames` to list known values)
-#import <MulleObjCLockFoundation/MulleObjCLockFoundation.h>   // MulleObjCLockFoundation
+#import <MulleFoundationBase/MulleFoundationBase.h>   // MulleFoundationBase
 
 #ifdef __has_include
 # if __has_include( "_MulleInvocationQueue-include.h")
