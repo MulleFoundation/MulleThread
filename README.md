@@ -5,6 +5,10 @@
 A MulleInvocationQueue is fed with NSInvocations, which it then executes in
 serial in a separate thread.
 
+| Release Version                                       | Release Notes
+|-------------------------------------------------------|--------------
+| ![Mulle kybernetiK tag](https://img.shields.io/github/tag//MulleInvocationQueue.svg?branch=release) [![Build Status](https://github.com//MulleInvocationQueue/workflows/CI/badge.svg?branch=release)](//github.com//MulleInvocationQueue/actions)| [RELEASENOTES](RELEASENOTES.md) |
+
 
 ## MulleThread
 
@@ -40,29 +44,49 @@ time. Use of `+exit` to finish a "MulleThread" is bad style.
 To wait for a thread to complete use `-mulleJoin`. But you need to `-preempt`
 or `-cancelWhenIdle` before.
 
-## mulle-sde
 
-This is a [mulle-sde](//github.com/mulle-sde) project. mulle-sde combines
-recursive package management with cross-platform builds via **cmake**:
 
-| Action  | Command                               | Description               |
-|---------|---------------------------------------|---------------------------|
-| Build   | `mulle-sde craft [--release|--debug]` | Builds into local `kitchen` folder |
-| Add     | `mulle-sde dependency add --c --github MulleFoundation MulleInvocationQueue` | Add MulleInvocationQueue> to another mulle-sde project as a dependency |
-| Install | `mulle-sde install --prefix /usr/local https://github.com/MulleFoundation/MulleInvocationQueue.git` | Like `make install` |
 
+## Requirements
+
+|   Requirement         | Release Version  | Description
+|-----------------------|------------------|---------------
+| [MulleFoundationBase](https://github.com/MulleFoundation/MulleFoundationBase) | ![Mulle kybernetiK tag](https://img.shields.io/github/tag//.svg) [![Build Status](https://github.com///workflows/CI/badge.svg?branch=release)](https://github.com///actions/workflows/mulle-sde-ci.yml) | 🛸 MulleFoundationBase does something
+| [mulle-objc-list](https://github.com/mulle-objc/mulle-objc-list) | ![Mulle kybernetiK tag](https://img.shields.io/github/tag//.svg) [![Build Status](https://github.com///workflows/CI/badge.svg?branch=release)](https://github.com///actions/workflows/mulle-sde-ci.yml) | 📒 Lists mulle-objc runtime information contained in executables.
+
+### You are here
+
+![Overview](overview.dot.svg)
+
+## Add
+
+Use [mulle-sde](//github.com/mulle-sde) to add MulleInvocationQueue to your project:
+
+``` sh
+mulle-sde add github:MulleFoundation/MulleInvocationQueue
+```
+
+## Install
+
+### Install with mulle-sde
+
+Use [mulle-sde](//github.com/mulle-sde) to build and install MulleInvocationQueue and all dependencies:
+
+``` sh
+mulle-sde install --prefix /usr/local \
+   https://github.com/MulleFoundation/MulleInvocationQueue/archive/latest.tar.gz
+```
 
 ### Manual Installation
 
-
 Install the requirements:
 
-| Requirements                                      | Description             |
-|---------------------------------------------------|-------------------------|
-| [MulleObjCLockFoundation](//github.com/MulleFoundation/MulleObjCLockFoundation) | The MulleObjCLockFoundation       |
+| Requirements                                 | Description
+|----------------------------------------------|-----------------------
+| [MulleFoundationBase](https://github.com/MulleFoundation/MulleFoundationBase)             | 🛸 MulleFoundationBase does something
+| [mulle-objc-list](https://github.com/mulle-objc/mulle-objc-list)             | 📒 Lists mulle-objc runtime information contained in executables.
 
-
-Install into `/usr/local`:
+Install **MulleInvocationQueue** into `/usr/local` with [cmake](https://cmake.org):
 
 ``` sh
 cmake -B build \
@@ -73,10 +97,8 @@ cmake --build build --config Release &&
 cmake --install build --config Release
 ```
 
+## Author
 
-<!--
-extension : mulle-sde/sde
-directory : demo/library
-template  : .../README.md
-Suppress this comment with `export MULLE_SDE_GENERATE_FILE_COMMENTS=NO`
--->
+[Nat!](https://mulle-kybernetik.com/weblog) for Mulle kybernetiK
+
+
