@@ -18,7 +18,6 @@
       "src/NSInvocation+MulleReturnStatus.m",
       "src/NSInvocation+UTF8String.h",
       "src/NSInvocation+UTF8String.m",
-      "src/reflect/objc-loader.inc",
       "src/reflect/_MulleInvocationQueue-export.h",
       "src/reflect/_MulleInvocationQueue-import-private.h",
       "src/reflect/_MulleInvocationQueue-import.h",
