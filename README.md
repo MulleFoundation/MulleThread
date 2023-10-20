@@ -87,6 +87,8 @@ Install the requirements:
 | [MulleFoundationBase](https://github.com/MulleFoundation/MulleFoundationBase)             | 🛸 MulleFoundationBase does something
 | [mulle-objc-list](https://github.com/mulle-objc/mulle-objc-list)             | 📒 Lists mulle-objc runtime information contained in executables.
 
+Download the latest [tar](https://github.com/MulleFoundation/MulleInvocationQueue/archive/refs/tags/latest.tar.gz) or [zip](https://github.com/MulleFoundation/MulleInvocationQueue/archive/refs/tags/latest.zip) archive and unpack it.
+
 Install **MulleInvocationQueue** into `/usr/local` with [cmake](https://cmake.org):
 
 ``` sh
