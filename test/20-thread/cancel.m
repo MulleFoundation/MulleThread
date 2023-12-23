@@ -1,4 +1,4 @@
-#import <MulleInvocationQueue/MulleInvocationQueue.h>
+#import <MulleThread/MulleThread.h>
 
 
 @interface Foo : NSObject

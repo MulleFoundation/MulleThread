@@ -14,7 +14,7 @@ export PROJECT_SOURCE_DIR="src"
 #
 #
 #
-export PROJECT_NAME="MulleInvocationQueue"
+export PROJECT_NAME="MulleThread"
 
 
 #

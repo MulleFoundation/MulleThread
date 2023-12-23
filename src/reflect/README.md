@@ -2,18 +2,18 @@
 
 ## External consumption only
 
-### `MulleInvocationQueue-export.h`
+### `MulleThread-export.h`
 
 This file is generated for the Objective-C envelope header (typically
-`MulleInvocationQueue
+`MulleThread
 .h`). It contains the list of Objective-C headers that
 are advertised to consumers of this library
 
 
-### `MulleInvocationQueue-provide.h`
+### `MulleThread-provide.h`
 
 This file is generated for the Objective-C or C envelope header (typically
-`MulleInvocationQueue
+`MulleThread
 .h`). It contains the list of C headers that will be
 advertised to consumers of this library.
 
@@ -27,14 +27,14 @@ It's updated during a build.
 ## Internal and External consumption
 
 
-### `MulleInvocationQueue-import.h`
+### `MulleThread-import.h`
 
 Objective-C dependency headers that this project uses are imported via
 this file. Dependencies are managed with `mulle-sde dependency`
 These dependencies are also available to consumers of this library.
 
 
-### `MulleInvocationQueue-include.h`
+### `MulleThread-include.h`
 
 C dependency and library headers that this project uses are imported via
 this file. Dependencies are managed with `mulle-sde dependency`.
@@ -45,13 +45,13 @@ These dependencies are also available to consumers of this library.
 ## Internal consumption only
 
 
-### `MulleInvocationQueue-import-private.h`
+### `MulleThread-import-private.h`
 
 Objective-C dependency headers that this project uses privately are imported
 via this file.
 
 
-### `MulleInvocationQueue-include-private.h`
+### `MulleThread-include-private.h`
 
 C dependency and library headers that this project uses privately are imported
 via this file.

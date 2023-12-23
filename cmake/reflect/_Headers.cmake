@@ -20,7 +20,7 @@ src/reflect
 # contents selected with patternfile ??-header--private-generated-headers
 #
 set( PRIVATE_GENERATED_HEADERS
-src/reflect/_MulleInvocationQueue-import-private.h
+src/reflect/_MulleThread-import-private.h
 )
 
 #
@@ -34,9 +34,9 @@ src/generic/import-private.h
 # contents selected with patternfile ??-header--public-generated-headers
 #
 set( PUBLIC_GENERATED_HEADERS
-src/reflect/_MulleInvocationQueue-export.h
-src/reflect/_MulleInvocationQueue-import.h
-src/reflect/_MulleInvocationQueue-include.h
+src/reflect/_MulleThread-export.h
+src/reflect/_MulleThread-import.h
+src/reflect/_MulleThread-include.h
 )
 
 #
@@ -50,10 +50,8 @@ src/generic/import.h
 # contents selected with patternfile ??-header--public-headers
 #
 set( PUBLIC_HEADERS
-src/MulleInvocationQueue.h
 src/MulleThread.h
-src/NSInvocation+MulleReturnStatus.h
-src/NSInvocation+UTF8String.h
-src/generic/MulleObjCLoader+MulleInvocationQueue.h
+src/generic/MulleObjCLoader+MulleThread.h
+src/reflect/_MulleThread-versioncheck.h
 )
 

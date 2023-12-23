@@ -12,16 +12,16 @@
 // this is a global symbol that is exposed, which can be used to detect
 // if this library is available
 
-#define HAVE_IMPORT_MULLE_INVOCATION_QUEUE
+#define HAVE_IMPORT_MULLE_THREAD
 
-#ifndef MULLE_INVOCATION_QUEUE_GLOBAL
-# ifdef MULLE_INVOCATION_QUEUE_BUILD
-#  define MULLE_INVOCATION_QUEUE_GLOBAL    MULLE_C_GLOBAL
+#ifndef MULLE_THREAD_GLOBAL
+# ifdef MULLE_THREAD_BUILD
+#  define MULLE_THREAD_GLOBAL    MULLE_C_GLOBAL
 # else
-#  if defined( MULLE_INVOCATION_QUEUE_INCLUDE_DYNAMIC) || (defined( MULLE_INCLUDE_DYNAMIC) && ! defined( MULLE_INVOCATION_QUEUE_INCLUDE_STATIC))
-#   define MULLE_INVOCATION_QUEUE_GLOBAL   MULLE_C_GLOBAL
+#  if defined( MULLE_THREAD_INCLUDE_DYNAMIC) || (defined( MULLE_INCLUDE_DYNAMIC) && ! defined( MULLE_THREAD_INCLUDE_STATIC))
+#   define MULLE_THREAD_GLOBAL   MULLE_C_GLOBAL
 #  else
-#   define MULLE_INVOCATION_QUEUE_GLOBAL   extern
+#   define MULLE_THREAD_GLOBAL   extern
 #  endif
 # endif
 #endif
@@ -33,7 +33,7 @@
    sourcetree, then you don't need it.
  */
 
-#import "_MulleInvocationQueue-import.h"
+#import "_MulleThread-import.h"
 
 /* You can add some more import statements here */
 

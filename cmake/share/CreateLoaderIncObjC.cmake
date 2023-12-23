@@ -76,10 +76,10 @@ if( CREATE_OBJC_LOADER_INC)
 
    # The preferred way:
    #
-   # _1_MulleInvocationQueue is an object library (a collection of files).
-   # _2_MulleInvocationQueue is the loader with OBJC_LOADER_INC.
+   # _1_MulleThread is an object library (a collection of files).
+   # _2_MulleThread is the loader with OBJC_LOADER_INC.
    #
-   # Produce a static library _3_MulleInvocationQueue from _1_MulleInvocationQueue
+   # Produce a static library _3_MulleThread from _1_MulleThread
    # to feed into MULLE_OBJC_LOADER_TOOL.
    #
    # The static library is, so that the commandline doesn't overflow for

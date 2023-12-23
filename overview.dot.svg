@@ -9,11 +9,11 @@
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 256)">
 <title>sourcetree</title>
 <polygon fill="white" stroke="transparent" points="-4,4 -4,-256 2851,-256 2851,4 -4,4"/>
-<!-- MulleInvocationQueue -->
+<!-- MulleThread -->
 <g id="node1" class="node">
-<title>MulleInvocationQueue</title>
+<title>MulleThread</title>
 <polygon fill="yellow" stroke="black" points="1526.5,-252 1349.5,-252 1349.5,-216 1526.5,-216 1526.5,-252"/>
-<text text-anchor="middle" x="1438" y="-230.3" font-family="Times,serif" font-size="14.00">MulleInvocationQueue</text>
+<text text-anchor="middle" x="1438" y="-230.3" font-family="Times,serif" font-size="14.00">MulleThread</text>
 </g>
 <!-- MulleFoundationBase -->
 <g id="node2" class="node">
@@ -24,9 +24,9 @@
 </a>
 </g>
 </g>
-<!-- MulleInvocationQueue&#45;&gt;MulleFoundationBase -->
+<!-- MulleThread&#45;&gt;MulleFoundationBase -->
 <g id="edge13" class="edge">
-<title>MulleInvocationQueue&#45;&gt;MulleFoundationBase</title>
+<title>MulleThread&#45;&gt;MulleFoundationBase</title>
 <path fill="none" stroke="black" d="M1438,-215.7C1438,-207.98 1438,-198.71 1438,-190.11"/>
 <polygon fill="black" stroke="black" points="1441.5,-190.1 1438,-180.1 1434.5,-190.1 1441.5,-190.1"/>
 </g>
