@@ -1,6 +1,6 @@
 {
-   "sublimegdb_workingdir": "${folder:kitchen/Debug/MulleInvocationQueue}",
-   "sublimegdb_commandline": "mulle-gdb --interpreter=mi kitchen/Debug/MulleInvocationQueue",
+   "sublimegdb_workingdir": "${folder:kitchen/Debug/MulleThread}",
+   "sublimegdb_commandline": "mulle-gdb --interpreter=mi kitchen/Debug/MulleThread",
    "folders":
    [
       {

@@ -11,8 +11,8 @@
  *
  */
 
-#ifndef _mulle_invocation_queue_include_h__
-#define _mulle_invocation_queue_include_h__
+#ifndef _mulle_thread_include_h__
+#define _mulle_thread_include_h__
 
 /* no headers */
 

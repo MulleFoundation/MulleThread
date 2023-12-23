@@ -11,15 +11,12 @@ endif()
 # contents selected with patternfile ??-source--sources
 #
 set( SOURCES
-src/MulleInvocationQueue.m
 src/MulleThread.m
-src/NSInvocation+MulleReturnStatus.m
-src/NSInvocation+UTF8String.m
 )
 
 #
 # contents selected with patternfile ??-source--stage2-sources
 #
 set( STAGE2_SOURCES
-src/generic/MulleObjCLoader+MulleInvocationQueue.m
+src/generic/MulleObjCLoader+MulleThread.m
 )

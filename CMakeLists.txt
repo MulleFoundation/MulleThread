@@ -8,7 +8,7 @@
 #
 cmake_minimum_required( VERSION 3.13)
 
-project( MulleInvocationQueue C)
+project( MulleThread C)
 
 
 set( MULLE_PROJECT_TYPE "Library")

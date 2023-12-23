@@ -2,7 +2,7 @@
 
 Use `mulle-sde test` or `mulle-test test` to run the tests. Each test is
 specified by a file with file extensions `.m` or `.aam`. This file
-is compiled and linked with **MulleInvocationQueue**.
+is compiled and linked with **MulleThread**.
 
 * rebuild the main project with `mulle-sde test craft`
 * run specific test with `mulle-sde test run <testfile>`
