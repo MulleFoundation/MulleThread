@@ -110,6 +110,8 @@ enum
 #ifdef MAIN_DEBUG
          fprintf( stderr, "***** 0x%tx (%p) call [super main]\n", mulle_thread_self(), self);
 #endif
+         // this will eventually call the "user" method that was given
+         // when the MulleThread was created
          [super main];
          [pool mulleReleaseAllObjects];
       }

@@ -9,8 +9,8 @@
  *
  *      mulle-sde environment set MULLE_MATCH_TO_C_RUN DISABLE
  */
-#ifndef mulle_thread_export_h__
-#define mulle_thread_export_h__
+#ifndef _mulle_thread__export_h__
+#define _mulle_thread__export_h__
 
 
 #import "MulleObjCLoader+MulleThread.h"
