@@ -401,21 +401,21 @@ export MULLE__OBJC__LIST_BRANCH="prerelease"
 
 
 #
-# MulleInvocationQueue nodetype: ${MULLE_INVOCATION_QUEUE_NODETYPE:-tar}
+# MulleThread nodetype: ${MULLE_THREAD_NODETYPE:-tar}
 #
-export MULLE_INVOCATION_QUEUE_NODETYPE="git"
+export MULLE_THREAD_NODETYPE="git"
 
 
 #
-# MulleInvocationQueue url: ${MULLE_INVOCATION_QUEUE_URL:-https://github.com/MulleFoundation/MulleInvocationQueue/archive/${MULLE_TAG}.tar.gz}
+# MulleThread url: ${MULLE_THREAD_URL:-https://github.com/MulleFoundation/MulleThread/archive/${MULLE_TAG}.tar.gz}
 #
-export MULLE_INVOCATION_QUEUE_URL="https://github.com/MulleFoundation/MulleInvocationQueue.git"
+export MULLE_THREAD_URL="https://github.com/MulleFoundation/MulleThread.git"
 
 
 #
-# MulleInvocationQueue branch: ${MULLE_INVOCATION_QUEUE_BRANCH}
+# MulleThread branch: ${MULLE_THREAD_BRANCH}
 #
-export MULLE_INVOCATION_QUEUE_BRANCH="prerelease"
+export MULLE_THREAD_BRANCH="prerelease"
 
 
 #

@@ -1,13 +1,14 @@
-# MulleThread
+# MulleInvocationQueue
 
-#### 🚶🚶🚶 MulleThread runs code in a separate thread
+#### 🍝 MulleThread sleeps until nudged
 
-A MulleThread is fed with NSInvocations, which it then executes in
+A MulleInvocationQueue is fed with NSInvocations, which it then executes in
 serial in a separate thread.
+
 
 | Release Version                                       | Release Notes
 |-------------------------------------------------------|--------------
-| ![Mulle kybernetiK tag](https://img.shields.io/github/tag//MulleThread.svg?branch=release) [![Build Status](https://github.com//MulleThread/workflows/CI/badge.svg?branch=release)](//github.com//MulleThread/actions)| [RELEASENOTES](RELEASENOTES.md) |
+| ![Mulle kybernetiK tag](https://img.shields.io/github/tag/MulleFoundation/MulleInvocationQueue.svg?branch=release) [![Build Status](https://github.com/MulleFoundation/MulleInvocationQueue/workflows/CI/badge.svg?branch=release)](//github.com/MulleFoundation/MulleInvocationQueue/actions) | [RELEASENOTES](RELEASENOTES.md) |
 
 
 ## MulleThread
@@ -61,21 +62,21 @@ or `-cancelWhenIdle` before.
 
 ## Add
 
-Use [mulle-sde](//github.com/mulle-sde) to add MulleThread to your project:
+Use [mulle-sde](//github.com/mulle-sde) to add MulleInvocationQueue to your project:
 
 ``` sh
-mulle-sde add github:MulleFoundation/MulleThread
+mulle-sde add github:MulleFoundation/MulleInvocationQueue
 ```
 
 ## Install
 
 ### Install with mulle-sde
 
-Use [mulle-sde](//github.com/mulle-sde) to build and install MulleThread and all dependencies:
+Use [mulle-sde](//github.com/mulle-sde) to build and install MulleInvocationQueue and all dependencies:
 
 ``` sh
 mulle-sde install --prefix /usr/local \
-   https://github.com/MulleFoundation/MulleThread/archive/latest.tar.gz
+   https://github.com/MulleFoundation/MulleInvocationQueue/archive/latest.tar.gz
 ```
 
 ### Manual Installation
@@ -87,9 +88,9 @@ Install the requirements:
 | [MulleFoundationBase](https://github.com/MulleFoundation/MulleFoundationBase)             | 🛸 MulleFoundationBase does something
 | [mulle-objc-list](https://github.com/mulle-objc/mulle-objc-list)             | 📒 Lists mulle-objc runtime information contained in executables.
 
-Download the latest [tar](https://github.com/MulleFoundation/MulleThread/archive/refs/tags/latest.tar.gz) or [zip](https://github.com/MulleFoundation/MulleThread/archive/refs/tags/latest.zip) archive and unpack it.
+Download the latest [tar](https://github.com/MulleFoundation/MulleInvocationQueue/archive/refs/tags/latest.tar.gz) or [zip](https://github.com/MulleFoundation/MulleInvocationQueue/archive/refs/tags/latest.zip) archive and unpack it.
 
-Install **MulleThread** into `/usr/local` with [cmake](https://cmake.org):
+Install **MulleInvocationQueue** into `/usr/local` with [cmake](https://cmake.org):
 
 ``` sh
 cmake -B build \
@@ -102,6 +103,6 @@ cmake --install build --config Release
 
 ## Author
 
-[Nat!](https://mulle-kybernetik.com/weblog) for Mulle kybernetiK
+[Nat!](https://mulle-kybernetik.com/weblog) for Mulle kybernetiK  
 
 

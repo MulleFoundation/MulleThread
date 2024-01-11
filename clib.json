@@ -1,7 +1,7 @@
 {
    "name" : "MulleThread",
    "version" : "0.0.1",
-   "description" : "MulleThread runs code in a separate thread",
+   "description" : "🍝 MulleThread sleeps until nudged",
    "keywords" : [],
    "license" : "BSD-3-Clause",
    "repo" : "MulleFoundation/MulleThread",
@@ -12,16 +12,12 @@
       "src/generic/MulleObjCLoader+MulleThread.m",
       "src/MulleThread.h",
       "src/MulleThread.m",
-      "src/MulleThread.h",
-      "src/MulleThread.m",
-      "src/NSInvocation+MulleReturnStatus.h",
-      "src/NSInvocation+MulleReturnStatus.m",
-      "src/NSInvocation+UTF8String.h",
-      "src/NSInvocation+UTF8String.m",
+      "src/reflect/objc-loader.inc",
       "src/reflect/_MulleThread-export.h",
       "src/reflect/_MulleThread-import-private.h",
       "src/reflect/_MulleThread-import.h",
-      "src/reflect/_MulleThread-include.h"
+      "src/reflect/_MulleThread-include.h",
+      "src/reflect/_MulleThread-versioncheck.h"
    ],
    "dependencies" : {
       "MulleFoundation/MulleFoundationBase": "*",
