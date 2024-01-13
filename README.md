@@ -1,4 +1,4 @@
-# MulleInvocationQueue
+# MulleThread
 
 #### 🍝 MulleThread sleeps until nudged
 
@@ -8,7 +8,7 @@ serial in a separate thread.
 
 | Release Version                                       | Release Notes
 |-------------------------------------------------------|--------------
-| ![Mulle kybernetiK tag](https://img.shields.io/github/tag/MulleFoundation/MulleInvocationQueue.svg?branch=release) [![Build Status](https://github.com/MulleFoundation/MulleInvocationQueue/workflows/CI/badge.svg?branch=release)](//github.com/MulleFoundation/MulleInvocationQueue/actions) | [RELEASENOTES](RELEASENOTES.md) |
+| ![Mulle kybernetiK tag](https://img.shields.io/github/tag/MulleFoundation/MulleThread.svg?branch=release) [![Build Status](https://github.com/MulleFoundation/MulleThread/workflows/CI/badge.svg?branch=release)](//github.com/MulleFoundation/MulleThread/actions) | [RELEASENOTES](RELEASENOTES.md) |
 
 
 ## MulleThread
@@ -53,7 +53,7 @@ or `-cancelWhenIdle` before.
 
 |   Requirement         | Release Version  | Description
 |-----------------------|------------------|---------------
-| [MulleFoundationBase](https://github.com/MulleFoundation/MulleFoundationBase) | ![Mulle kybernetiK tag](https://img.shields.io/github/tag//.svg) [![Build Status](https://github.com///workflows/CI/badge.svg?branch=release)](https://github.com///actions/workflows/mulle-sde-ci.yml) | 🛸 MulleFoundationBase does something
+| [MulleFoundationBase](https://github.com/MulleFoundation/MulleFoundationBase) | ![Mulle kybernetiK tag](https://img.shields.io/github/tag//.svg) [![Build Status](https://github.com///workflows/CI/badge.svg?branch=release)](https://github.com///actions/workflows/mulle-sde-ci.yml) | 🧱 MulleFoundationBase amalgamates Foundations projects
 | [mulle-objc-list](https://github.com/mulle-objc/mulle-objc-list) | ![Mulle kybernetiK tag](https://img.shields.io/github/tag//.svg) [![Build Status](https://github.com///workflows/CI/badge.svg?branch=release)](https://github.com///actions/workflows/mulle-sde-ci.yml) | 📒 Lists mulle-objc runtime information contained in executables.
 
 ### You are here
@@ -62,21 +62,21 @@ or `-cancelWhenIdle` before.
 
 ## Add
 
-Use [mulle-sde](//github.com/mulle-sde) to add MulleInvocationQueue to your project:
+Use [mulle-sde](//github.com/mulle-sde) to add MulleThread to your project:
 
 ``` sh
-mulle-sde add github:MulleFoundation/MulleInvocationQueue
+mulle-sde add github:MulleFoundation/MulleThread
 ```
 
 ## Install
 
 ### Install with mulle-sde
 
-Use [mulle-sde](//github.com/mulle-sde) to build and install MulleInvocationQueue and all dependencies:
+Use [mulle-sde](//github.com/mulle-sde) to build and install MulleThread and all dependencies:
 
 ``` sh
 mulle-sde install --prefix /usr/local \
-   https://github.com/MulleFoundation/MulleInvocationQueue/archive/latest.tar.gz
+   https://github.com/MulleFoundation/MulleThread/archive/latest.tar.gz
 ```
 
 ### Manual Installation
@@ -85,12 +85,12 @@ Install the requirements:
 
 | Requirements                                 | Description
 |----------------------------------------------|-----------------------
-| [MulleFoundationBase](https://github.com/MulleFoundation/MulleFoundationBase)             | 🛸 MulleFoundationBase does something
+| [MulleFoundationBase](https://github.com/MulleFoundation/MulleFoundationBase)             | 🧱 MulleFoundationBase amalgamates Foundations projects
 | [mulle-objc-list](https://github.com/mulle-objc/mulle-objc-list)             | 📒 Lists mulle-objc runtime information contained in executables.
 
-Download the latest [tar](https://github.com/MulleFoundation/MulleInvocationQueue/archive/refs/tags/latest.tar.gz) or [zip](https://github.com/MulleFoundation/MulleInvocationQueue/archive/refs/tags/latest.zip) archive and unpack it.
+Download the latest [tar](https://github.com/MulleFoundation/MulleThread/archive/refs/tags/latest.tar.gz) or [zip](https://github.com/MulleFoundation/MulleThread/archive/refs/tags/latest.zip) archive and unpack it.
 
-Install **MulleInvocationQueue** into `/usr/local` with [cmake](https://cmake.org):
+Install **MulleThread** into `/usr/local` with [cmake](https://cmake.org):
 
 ``` sh
 cmake -B build \
