@@ -56,7 +56,7 @@ int   main( int argc, const char * argv[])
                                       selector:@selector( runServer:)
                                         object:nil];
    test_printf( "start\n");
-   [thread start];
+   [thread mulleStart];
    [thread nudge];
 
    test_printf( "sleep\n");

@@ -11,7 +11,7 @@
 # endif
 #endif
 
-#define MULLE_THREAD_VERSION   ((0UL << 20) | (0 << 8) | 1)
+#define MULLE_THREAD_VERSION   ((0UL << 20) | (1 << 8) | 0)
 
 
 #import "import.h"
@@ -33,12 +33,14 @@ enum
 // This thread object contains a threadLock. The first time the
 // thread is started it will execute target/selector (from -main).
 // Then the thread will sleep and wait until "-nudge"d. Then it will
-// excute target/selector again. You can't use the -detach methods with
-// MulleThread, but you can wait on it with -mulleJoin.
+// execute target/selector again. You can't use the -detach methods with
+// MulleThread, but you can wait on it with -mulleJoin. Do not use -start
+// use -mulleStart.
 //
 @interface MulleThread : NSThread
 
 @property( readonly, retain) NSConditionLock   *threadLock;
+
 
 // wake up thread, do not call from "within" thread
 - (void) nudge;
@@ -57,6 +59,31 @@ enum
 
 // if the thread idles, this will wait forever, do not call from "within" thread
 - (void) mulleJoin;
+
+// check if thread idles, do not call from "within" thread
+
+- (BOOL) isIdle;
+
+//
+// only to be called from the "outside", change the next "main" routine for
+// the next nudge... will block if the thread is not idle
+//
+- (void) setInvocation:(NSInvocation *) invocation;
+
+
+//
+// this will be called in a locked state in -main before calling the
+// -[NSThread main], return NO if you don't want that to happen
+//
+- (BOOL) willCallMain;
+
+
+//
+// this will be called before going idle, return NO, if you want to run
+// again immediately (would call -[NSThread main], twice, so this is only
+// desirable, if you change the invocation...
+//
+- (BOOL) willIdle;
 
 @end
 

@@ -60,15 +60,12 @@ enum
 
 
 #ifndef NDEBUG
-- (void) assertMainThreadTargetSelector
+- (void) assertInvocationOnMainThread
 {
    NSMethodSignature   *signature;
    char                *returnType;
 
-   if( ! _target)
-      return;
-
-   signature  = [_target methodSignatureForSelector:_selector];
+   signature  = [_invocation methodSignature];
    assert( signature);
    returnType = [signature methodReturnType];
    // return value of function or _target/selector must be int
@@ -77,12 +74,43 @@ enum
 #endif
 
 
+//
+// this routine must be called from the "outside" only, we transfer
+// it to temporary space in the thread, and then tell MulleThread to copy
+// it with a special state
+//
+- (void) setInvocation:(NSInvocation *) invocation
+{
+   [_threadLock lockWhenCondition:MulleThreadStateIdle];
+   {
+      [_invocation mulleRelinquishAccess];
+      [_invocation autorelease];
+
+      [invocation mulleRelinquishAccess];
+      _invocation = [invocation retain];
+   }
+   [_threadLock unlockWithCondition:MulleThreadStateIdle];
+}
+
+
+- (BOOL) willCallMain
+{
+   return( YES);
+}
+
+
+- (BOOL) willIdle
+{
+   return( YES);
+}
+
+
 - (void) main
 {
    NSAutoreleasePool   *pool;
 
 #ifndef NDEBUG
-   [self assertMainThreadTargetSelector];
+   [self assertInvocationOnMainThread];
 #endif
 
    pool = [NSAutoreleasePool new];
@@ -91,35 +119,48 @@ enum
       // MulleThreadStateIdle,
       // MulleThreadStateBusy,
 #ifdef MAIN_DEBUG
-      fprintf( stderr, "\n***** 0x%tx (%p) waiting on <> idle\n", mulle_thread_self(), self);
+      fprintf( stderr, "\n***** %p (%p) waiting on <> idle\n", (void *) mulle_thread_self(), self);
 #endif
       [_threadLock mulleLockWhenNotCondition:MulleThreadStateIdle];
 #ifdef MAIN_DEBUG
-      fprintf( stderr, "\n***** 0x%tx (%p) got idle\n", mulle_thread_self(), self);
+      fprintf( stderr, "\n***** %p (%p) got <> idle\n", (void *) mulle_thread_self(), self);
 #endif
-
       _rval = MulleThreadContinueMain;
       for(;;)
       {
          if( [self isCancelled])
+         {
+#ifdef MAIN_DEBUG
+            fprintf( stderr, "***** 0x%p (%p) thread has received a cancel\n", (void *) mulle_thread_self(), self);
+#endif
             goto done;
+         }
 
          if( _rval != MulleThreadContinueMain)
             break;
 
 #ifdef MAIN_DEBUG
-         fprintf( stderr, "***** 0x%tx (%p) call [super main]\n", mulle_thread_self(), self);
+         fprintf( stderr, "***** 0x%p (%p) call [super main]\n", (void *) mulle_thread_self(), self);
 #endif
          // this will eventually call the "user" method that was given
          // when the MulleThread was created
-         [super main];
-         [pool mulleReleaseAllObjects];
+         if( [self willCallMain])
+            [super main];
+         [pool mulleReleaseAllPoolObjects];
       }
 
       if( _rval == MulleThreadCancelMain)
+      {
+#ifdef MAIN_DEBUG
+         fprintf( stderr, "***** 0x%p (%p) main return value indicates cancel\n", (void *) mulle_thread_self(), self);
+#endif
          goto done;
+      }
 
-      [_threadLock unlockWithCondition:MulleThreadStateIdle];
+      if( [self willIdle])
+      {
+         [_threadLock unlockWithCondition:MulleThreadStateIdle];
+      }
    }
 
 done:
@@ -127,8 +168,20 @@ done:
    [pool release];
 
 #ifdef MAIN_DEBUG
-   fprintf( stderr, "\n***** 0x%tx (%p) is exiting\n\n", mulle_thread_self(), self);
+   fprintf( stderr, "\n***** 0x%p (%p) is exiting\n\n", (void *) mulle_thread_self(), self);
 #endif
+}
+
+
+- (BOOL) isIdle
+{
+   // just check if idling
+   if( [_threadLock tryLockWhenCondition:MulleThreadStateIdle])
+   {
+      [_threadLock unlockWithCondition:MulleThreadStateIdle];
+      return( YES);
+   }
+   return( NO);
 }
 
 
@@ -137,13 +190,6 @@ done:
    // if exited, don't do anything, if busy don't do anything
    if( [_threadLock tryLockWhenCondition:MulleThreadStateIdle])
       [_threadLock unlockWithCondition:MulleThreadStateBusy];
-}
-
-
-- (void) mulleJoin
-{
-   [_threadLock lockWhenCondition:MulleThreadStateExited];
-   [_threadLock unlockWithCondition:MulleThreadStateExited];
 }
 
 
@@ -165,8 +211,8 @@ done:
    condition = [_threadLock condition];
    if( condition != MulleThreadStateExited)
    {
-      [self cancel];   // set NSThread cancel flag
-      condition = MulleThreadStateBusy;
+      [self cancel];                    // set NSThread cancel flag
+      condition = MulleThreadStateBusy; // this is a nudge
    }
    [_threadLock unlockWithCondition:condition];
 }
@@ -179,14 +225,23 @@ done:
 }
 
 
-- (void) start
+- (void) mulleStart
 {
-   // Ensure it's in Idle the first time. Usually it wil though and this
+   // Ensure it's in Idle the first time. Usually it will though and this
    // tryLock fails
    if( [_threadLock mulleTryLockWhenNotCondition:MulleThreadStateIdle])
       [_threadLock unlockWithCondition:MulleThreadStateIdle];
-   [super start];
+   [super mulleStart];
 }
+
+
+- (void) mulleJoin
+{
+   [_threadLock lockWhenCondition:MulleThreadStateExited];
+   [_threadLock unlockWithCondition:MulleThreadStateExited];
+   [super mulleJoin];
+}
+
 
 @end
 
