@@ -33,6 +33,70 @@ static void   test_printf( char *format, ...)
 @end
 
 
+@interface DebugThread : MulleThread
+@end
+
+
+@implementation DebugThread
+
+- (BOOL) isCancelled
+{
+   BOOL   flag;
+
+   flag = [super isCancelled];
+   mulle_fprintf( stderr, "%s -> %btd\n", __FUNCTION__, flag);
+   return( flag);
+}
+
+- (BOOL) willCallMain
+{
+   BOOL   flag;
+
+   flag = [super willCallMain];
+   mulle_fprintf( stderr, "%s -> %btd\n", __FUNCTION__, flag);
+   return( flag);
+}
+
+
+- (BOOL) willIdle
+{
+   BOOL   flag;
+
+   flag = [super willIdle];
+   mulle_fprintf( stderr, "%s -> %btd\n", __FUNCTION__, flag);
+   return( flag);
+}
+
+- (void) cancelWhenIdle
+{
+   mulle_fprintf( stderr, "%s\n", __FUNCTION__);
+   [super cancelWhenIdle];
+}
+
+
+- (void) cancel
+{
+   mulle_fprintf( stderr, "%s\n", __FUNCTION__);
+   [super cancel];
+}
+
+
+- (void) preempt
+{
+   mulle_fprintf( stderr, "%s\n", __FUNCTION__);
+   [super preempt];
+}
+
+
+- (void) nudge
+{
+   mulle_fprintf( stderr, "%s\n", __FUNCTION__);
+   [super nudge];
+}
+
+@end
+
+
 
 int   main( int argc, const char * argv[])
 {
@@ -48,11 +112,11 @@ int   main( int argc, const char * argv[])
 
    foo    = [Foo object];
    test_printf( "create\n");
-   thread = [MulleThread mulleThreadWithTarget:foo
+   thread = [DebugThread mulleThreadWithTarget:foo
                                       selector:@selector( runServer:)
                                         object:nil];
    test_printf( "start\n");
-   [thread start];
+   [thread mulleStart];
    test_printf( "sleep\n");
    mulle_relativetime_sleep( 0.1);
 
