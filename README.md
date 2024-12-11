@@ -8,7 +8,7 @@ serial in a separate thread.
 
 | Release Version                                       | Release Notes
 |-------------------------------------------------------|--------------
-| ![Mulle kybernetiK tag](https://img.shields.io/github/tag/MulleFoundation/MulleThread.svg?branch=release) [![Build Status](https://github.com/MulleFoundation/MulleThread/workflows/CI/badge.svg?branch=release)](//github.com/MulleFoundation/MulleThread/actions) | [RELEASENOTES](RELEASENOTES.md) |
+| ![Mulle kybernetiK tag](https://img.shields.io/github/tag/MulleFoundation/MulleThread.svg) [![Build Status](https://github.com/MulleFoundation/MulleThread/workflows/CI/badge.svg)](//github.com/MulleFoundation/MulleThread/actions) | [RELEASENOTES](RELEASENOTES.md) |
 
 
 ## MulleThread
