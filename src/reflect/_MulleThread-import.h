@@ -12,19 +12,19 @@
  */
 
 // To remove the following dependency (headers and library) completely:
-//   `mulle-sde dependency remove MulleFoundationBase`
-// (Use 46519FAC-A31D-47EF-AFF2-7A636B4844DF instead of MulleFoundationBase, if there are duplicate entries)
+//   `mulle-sde dependency remove MulleObjC`
+// (Use 9043D9A5-B348-4C9B-9248-DBC7D12A84CA instead of MulleObjC, if there are duplicate entries)
 //
 // You can tweak the following #import with these commands:
-//    remove #import      : `mulle-sde dependency mark MulleFoundationBase no-header`
-//    rename              : `mulle-sde dependency|library set MulleFoundationBase include whatever.h`
-//    reorder             : `mulle-sde dependency move MulleFoundationBase <up|down>`
-//    toggle #import      : `mulle-sde dependency mark MulleFoundationBase [no-]import`
-//    toggle public       : `mulle-sde dependency mark MulleFoundationBase [no-]public`
-//    toggle optional     : `mulle-sde dependency mark MulleFoundationBase [no-]require`
-//    remove for platform : `mulle-sde dependency mark MulleFoundationBase no-platform-<uname>`
+//    remove #import      : `mulle-sde dependency mark MulleObjC no-header`
+//    rename              : `mulle-sde dependency|library set MulleObjC include whatever.h`
+//    reorder             : `mulle-sde dependency move MulleObjC <up|down>`
+//    toggle #import      : `mulle-sde dependency mark MulleObjC [no-]import`
+//    toggle public       : `mulle-sde dependency mark MulleObjC [no-]public`
+//    toggle optional     : `mulle-sde dependency mark MulleObjC [no-]require`
+//    remove for platform : `mulle-sde dependency mark MulleObjC no-platform-<uname>`
 //        (use `mulle-sourcetree-to-c --unames` to list known values)
-#import <MulleFoundationBase/MulleFoundationBase.h>   // MulleFoundationBase
+#import <MulleObjC/MulleObjC.h>   // MulleObjC
 
 #ifdef __has_include
 # if __has_include( "_MulleThread-include.h")
