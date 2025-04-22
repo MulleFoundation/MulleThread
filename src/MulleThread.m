@@ -12,11 +12,11 @@
 // thread states are also not "commands" you don't set
 // the state to MulleThreadStateExited and expect
 // the thread to cancel
-enum
+typedef NS_ENUM( NSUInteger, MulleThreadState)
 {
-   MulleThreadStateIdle,
-   MulleThreadStateBusy,
-   MulleThreadStateExited  // set by thread when main exits
+   MulleThreadStateIdle   = 0,
+   MulleThreadStateBusy   = 1,
+   MulleThreadStateExited = -1 // set by thread when main exits
 };
 
 
@@ -195,7 +195,7 @@ done:
 
 - (void) blockUntilNoLongerBusy
 {
-   NSUInteger   condition;
+   MulleThreadState   condition;
 
    [_threadLock mulleLockWhenNotCondition:MulleThreadStateBusy];
    condition = [_threadLock condition];
@@ -205,7 +205,7 @@ done:
 
 - (void) cancelWhenIdle
 {
-   NSUInteger   condition;
+   MulleThreadState   condition;
 
    [_threadLock mulleLockWhenNotCondition:MulleThreadStateBusy];
    condition = [_threadLock condition];

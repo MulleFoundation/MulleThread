@@ -11,7 +11,7 @@
 # endif
 #endif
 
-#define MULLE_THREAD_VERSION   ((0UL << 20) | (1 << 8) | 0)
+#define MULLE_THREAD_VERSION   ((0UL << 20) | (2 << 8) | 0)
 
 
 #import "import.h"
