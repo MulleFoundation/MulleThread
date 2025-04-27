@@ -1,3 +1,8 @@
+## 0.2.0
+
+Various small improvements
+
+
 ## 0.1.0
 
 
