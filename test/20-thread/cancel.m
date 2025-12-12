@@ -26,7 +26,7 @@ int   main( int argc, const char * argv[])
       return( 1);
 #endif
 
-   foo    = [Foo object];
+   foo    = [Foo instance];
    thread = [MulleThread mulleThreadWithTarget:foo
                                       selector:@selector( runServer:)
                                         object:nil];
