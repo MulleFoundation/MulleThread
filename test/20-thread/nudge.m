@@ -110,7 +110,7 @@ int   main( int argc, const char * argv[])
       return( 1);
 #endif
 
-   foo    = [Foo object];
+   foo    = [Foo instance];
    test_printf( "create\n");
    thread = [DebugThread mulleThreadWithTarget:foo
                                       selector:@selector( runServer:)

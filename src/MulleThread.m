@@ -81,12 +81,18 @@ typedef NS_ENUM( NSUInteger, MulleThreadState)
 //
 - (void) setInvocation:(NSInvocation *) invocation
 {
+   id   objects[ 2];
+
    [_threadLock lockWhenCondition:MulleThreadStateIdle];
    {
-      [_invocation mulleRelinquishAccess];
-      [_invocation autorelease];
+      // We need to put both invocation into the same uniquing set
+      // to make sure mulleRelinquishAccess is only called once. Probably
+      // need API to relinquish more
+      objects[ 0] = _invocation;
+      objects[ 1] = invocation;
+      MulleObjCRelinquishAccessToObjects( objects, 2);
 
-      [invocation mulleRelinquishAccess];
+      [_invocation autorelease];
       _invocation = [invocation retain];
    }
    [_threadLock unlockWithCondition:MulleThreadStateIdle];
