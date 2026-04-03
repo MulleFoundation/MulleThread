@@ -7,7 +7,7 @@ static void   test_printf( char *format, ...)
 
    va_start( args, format);
 #ifndef MULLE_TEST
-   printf( "%lx : %.9f ", mulle_thread_self(), mulle_absolutetime_now());
+   mulle_printf( "%lx : %.9f ", mulle_thread_self(), mulle_absolutetime_now());
 #endif
    vprintf( format, args);
    fflush( stdout);

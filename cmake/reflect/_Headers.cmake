@@ -51,7 +51,7 @@ src/generic/import.h
 #
 set( PUBLIC_HEADERS
 src/MulleThread.h
-src/generic/MulleObjCLoader+MulleThread.h
+src/generic/MulleObjCDeps+MulleThread.h
 src/reflect/_MulleThread-versioncheck.h
 )
 
