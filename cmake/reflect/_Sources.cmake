@@ -18,5 +18,5 @@ src/MulleThread.m
 # contents selected with patternfile ??-source--stage2-sources
 #
 set( STAGE2_SOURCES
-src/generic/MulleObjCLoader+MulleThread.m
+src/generic/MulleObjCDeps+MulleThread.m
 )

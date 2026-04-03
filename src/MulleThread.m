@@ -28,6 +28,9 @@ typedef NS_ENUM( NSUInteger, MulleThreadState)
                         toTarget:(id) target
                       withObject:(id) argument
 {
+MULLE_C_UNUSED( sel );
+MULLE_C_UNUSED( target );
+MULLE_C_UNUSED( argument );
 // makes no sense with MulleThread, use NSThread
    abort();
 }
@@ -36,6 +39,8 @@ typedef NS_ENUM( NSUInteger, MulleThreadState)
 + (void) mulleDetachNewThreadWithFunction:(MulleThreadFunction_t *) f
                                  argument:(void *) argument
 {
+MULLE_C_UNUSED( f );
+MULLE_C_UNUSED( argument );
 // makes no sense with MulleThread, use NSThread
    abort();
 }
@@ -125,11 +130,11 @@ typedef NS_ENUM( NSUInteger, MulleThreadState)
       // MulleThreadStateIdle,
       // MulleThreadStateBusy,
 #ifdef MAIN_DEBUG
-      fprintf( stderr, "\n***** %p (%p) waiting on <> idle\n", (void *) mulle_thread_self(), self);
+      mulle_fprintf( stderr, "\n***** %p (%p) waiting on <> idle\n", (void *) mulle_thread_self(), self);
 #endif
       [_threadLock mulleLockWhenNotCondition:MulleThreadStateIdle];
 #ifdef MAIN_DEBUG
-      fprintf( stderr, "\n***** %p (%p) got <> idle\n", (void *) mulle_thread_self(), self);
+      mulle_fprintf( stderr, "\n***** %p (%p) got <> idle\n", (void *) mulle_thread_self(), self);
 #endif
       _rval = MulleThreadContinueMain;
       for(;;)
@@ -137,7 +142,7 @@ typedef NS_ENUM( NSUInteger, MulleThreadState)
          if( [self isCancelled])
          {
 #ifdef MAIN_DEBUG
-            fprintf( stderr, "***** 0x%p (%p) thread has received a cancel\n", (void *) mulle_thread_self(), self);
+            mulle_fprintf( stderr, "***** 0x%p (%p) thread has received a cancel\n", (void *) mulle_thread_self(), self);
 #endif
             goto done;
          }
@@ -146,7 +151,7 @@ typedef NS_ENUM( NSUInteger, MulleThreadState)
             break;
 
 #ifdef MAIN_DEBUG
-         fprintf( stderr, "***** 0x%p (%p) call [super main]\n", (void *) mulle_thread_self(), self);
+         mulle_fprintf( stderr, "***** 0x%p (%p) call [super main]\n", (void *) mulle_thread_self(), self);
 #endif
          // this will eventually call the "user" method that was given
          // when the MulleThread was created
@@ -158,7 +163,7 @@ typedef NS_ENUM( NSUInteger, MulleThreadState)
       if( _rval == MulleThreadCancelMain)
       {
 #ifdef MAIN_DEBUG
-         fprintf( stderr, "***** 0x%p (%p) main return value indicates cancel\n", (void *) mulle_thread_self(), self);
+         mulle_fprintf( stderr, "***** 0x%p (%p) main return value indicates cancel\n", (void *) mulle_thread_self(), self);
 #endif
          goto done;
       }
@@ -174,7 +179,7 @@ done:
    [pool release];
 
 #ifdef MAIN_DEBUG
-   fprintf( stderr, "\n***** 0x%p (%p) is exiting\n\n", (void *) mulle_thread_self(), self);
+   mulle_fprintf( stderr, "\n***** 0x%p (%p) is exiting\n\n", (void *) mulle_thread_self(), self);
 #endif
 }
 

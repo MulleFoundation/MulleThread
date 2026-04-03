@@ -13,7 +13,7 @@
 #define _mulle_thread__export_h__
 
 
-#import "MulleObjCLoader+MulleThread.h"
+#import "MulleObjCDeps+MulleThread.h"
 
 
 #endif
