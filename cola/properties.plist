@@ -6,6 +6,7 @@
       language="c";
       dialect="objc";
       name="MulleThread";
+      version="0.2.2";
       user="MulleFoundation";
       repo="MulleThread";
       homepage="https://github.com/MulleFoundation/MulleThread";

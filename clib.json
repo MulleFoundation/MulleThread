@@ -1,11 +1,12 @@
 {
    "name" : "MulleThread",
-   "version" : "0.2.1",
+   "version" : "0.2.2",
    "description" : "🍝 MulleThread sleeps until nudged",
    "keywords" : [],
    "license" : "BSD-3-Clause",
    "repo" : "MulleFoundation/MulleThread",
    "src" : [
+      "asset/dox/TOC.md",
       "src/generic/import-private.h",
       "src/generic/import.h",
       "src/generic/MulleObjCDeps+MulleThread.h",
