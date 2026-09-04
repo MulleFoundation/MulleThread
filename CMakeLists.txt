@@ -8,7 +8,7 @@
 #
 cmake_minimum_required( VERSION 3.13...99.99)
 
-project( MulleThread VERSION 0.2.3 LANGUAGES C)
+project( MulleThread VERSION 0.2.4 LANGUAGES C)
 
 
 set( MULLE_PROJECT_TYPE "Library")

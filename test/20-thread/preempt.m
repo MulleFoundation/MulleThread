@@ -30,8 +30,9 @@ int   main( int argc, const char * argv[])
    thread = [MulleThread mulleThreadWithTarget:foo
                                       selector:@selector( runServer:)
                                         object:nil];
-   [thread start];
+   [thread mulleStart];
    [thread preempt];
+   [thread mulleJoin];
 
    return( 0);
 }

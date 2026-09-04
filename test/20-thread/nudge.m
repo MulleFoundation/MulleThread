@@ -122,15 +122,13 @@ int   main( int argc, const char * argv[])
 
    for( i = 0; i < 100; i++)
    {
+      [thread blockUntilNoLongerBusy];
       test_printf( "nudge\n");
       [thread nudge];
-
-      mulle_relativetime_sleep( 0.01);
    }
+   [thread blockUntilNoLongerBusy];
    test_printf( "cancel\n");
-   [thread cancel];
-   [thread nudge];
-   mulle_relativetime_sleep( 0.01);
+   [thread cancelWhenIdle];
    test_printf( "join\n");
    [thread mulleJoin];
 
