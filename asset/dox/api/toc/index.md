@@ -1,477 +1,429 @@
 # MulleThread Library Documentation for AI
-
+<!-- Keywords: thread, nudge, concurrency, conditionlock, wakeup, objc, async -->
 ## 1. Introduction & Purpose
 
-MulleThread provides a lightweight threading abstraction combining NSThread with NSConditionLock for efficient work dispatch. Implements a nudge-based wake-on-demand pattern where threads idle waiting for notifications, then execute target/selector methods and return to idle. Ideal for background task processing, worker thread pools, and event-driven architectures without busy-waiting overhead.
+MulleThread is a small Objective-C library providing a single reusable worker
+thread class. It combines an `NSThread` with an `NSConditionLock` to implement a
+nudge-based wake-on-demand pattern: the thread idles (sleeps, consuming no CPU)
+until it is "nudged", at which point it executes a target/selector pair in its
+own thread and then returns to idle, waiting for the next nudge.
+
+It solves the problem of running Objective-C methods on a dedicated background
+thread without busy-waiting, without repeated thread creation/teardown, and with
+simple, race-free shutdown semantics. Key features:
+
+- Idle thread sleeps on a condition lock; zero CPU while waiting.
+- One `NSAutoreleasePool` is managed automatically per work cycle by the library.
+- Deterministic lifecycle: `-mulleStart`, `-nudge`, `-cancelWhenIdle`/`-preempt`, `-mulleJoin`.
+- Subclassable hooks (`-willCallMain`, `-willIdle`) to control each cycle.
+- Could be used to feed a serial work queue. A `MulleThread` is the combination of a `NSConditionLock` and an `NSThread` (see `README.md`).
+
+It is a foundational component of the `MulleFoundation` / `mulle-objc` ecosystem and relies on `MulleObjC` for `NSThread` and `NSConditionLock`.
 
 ## 2. Key Concepts & Design Philosophy
 
-- **Nudge-Based Wakeup**: Thread sleeps until nudged; no busy-waiting or polling
-- **Target/Selector Execution**: Executes Objective-C methods in separate thread
-- **Condition Lock**: Uses NSConditionLock internally for efficient synchronization
-- **Autorelease Management**: Automatically manages NSAutoreleasePool per cycle
-- **State Tracking**: Tracks idle/busy state for safe synchronization
-- **Graceful Shutdown**: Multiple termination strategies (cancel, preempt, join)
+- **Nudge-based wakeup**: The thread runs in a loop. When idle it blocks in
+  `[_threadLock mulleLockWhenNotCondition:MulleThreadStateIdle]`. A `-nudge`
+  from another thread transitions the lock condition from `Idle` to `Busy`,
+  waking the thread. There is no polling and no busy-waiting.
+- **Target/selector execution**: The work is supplied as a target object plus a
+  selector. The selector must take one argument and return `int`. The returned
+  integer is an instruction to the thread loop (see the `MulleThreadReturnValue`
+  enum below).
+- **Condition as state machine**: The `NSConditionLock` `threadLock` condition
+  is the thread state: `Idle`, `Busy`, `Exited` (internal enum in `MulleThread.m`,
+  not public). External control methods simply acquire the lock, inspect/change
+  the condition, and unlock — which makes them safe to call from other threads.
+- **Autorelease management**: `-main` wraps each cycle in a
+  `[pool mulleReleaseAllPoolObjects]`, so the target/selector does not need its
+  own autorelease pool.
+- **Graceful vs. immediate shutdown**: `-cancelWhenIdle` waits for the thread to
+  become idle before canceling; `-preempt` cancels immediately; the worker can
+  also cancel itself (e.g. via `[[NSThread currentThread] cancel]`). Always
+  `-mulleJoin` afterwards.
+- **Thread confinement of control**: Control methods (`-nudge`, `-preempt`,
+  `-cancelWhenIdle`, `-blockUntilNoLongerBusy`, `-setInvocation:`) must be called
+  from *outside* the worker thread. Only `-cancel` may be called from within.
 
 ## 3. Core API & Data Structures
 
-### MulleThread Class
+### 3.1. `src/MulleThread.h`
 
-#### Return Values from target/selector
+This is the only public header of the library. It declares the `MulleThread`
+class (a subclass of `NSThread`) and the return-value enum.
+
+#### Return values from target/selector
 
 ```objc
-enum {
-    MulleThreadGoIdle        = 0,      // Thread returns to idle, waits for nudge
-    MulleThreadContinueMain  = 1,      // Run target/selector again immediately
-    MulleThreadCancelMain    = -1      // Cancel thread execution
+enum
+{
+   MulleThreadGoIdle        = 0,
+   MulleThreadContinueMain  = 1,
+   MulleThreadCancelMain    = -1
 };
 ```
 
-#### Creation & Initialization
+`MulleThreadGoIdle` = return to idle and wait for the next nudge.
+`MulleThreadContinueMain` = run the target/selector again immediately (no nudge needed).
+`MulleThreadCancelMain` = cancel and finish the thread.
 
-- `+ mulleThreadWithTarget:(id)target selector:(SEL)selector object:(id)object` → `instancetype`: Create thread with work
-- `+ mulleThreadWithTarget:(id)target selector:(SEL)selector object:(id)object autoreleasepool:(BOOL)flag` → `instancetype`: Create with autorelease pool control
-- `- init` → `instancetype`: Initialize (no work assigned initially)
+#### `@interface MulleThread : NSThread`
 
-#### Thread Control
+- **Purpose:** A reusable worker thread that idles until nudged and then executes a target/selector.
+- **Property:**
+  - `@property( readonly, retain) NSConditionLock   *threadLock;`
+    Underlying condition lock. Its condition encodes the thread state (`Idle`/`Busy`/`Exited`). Normally you never touch it directly, but it is exposed for advanced uses.
+- **Lifecycle functions:**
+  - Creation: a MulleThread is created with the inherited `NSThread` factory
+    `+ (instancetype) mulleThreadWithTarget:(id) target selector:(SEL) sel object:(id) argument;`
+    (declared in the `MulleObjC` dependency's `NSThread.h`; it binds the work
+    target/selector and returns an autoreleased instance).
+  - `- (instancetype) init` (inherited from `NSThread`): initializes the lock to `Idle` if no target/selector was given.
+  - `- (void) mulleStart;` (overridden from `NSThread`): normalizes the state to `Idle`, then starts the OS thread via `[super mulleStart]`. The header comment says to use this instead of `-start`. Starting does *not* execute the target/selector — the thread waits for a nudge.
+  - `- (void) mulleJoin;` (overridden from `NSThread`): blocks until the thread has reached the `Exited` state, then calls `[super mulleJoin]`. Only returns if the thread is exiting (see pitfalls).
+- **Control functions (call only from outside the thread):**
+  - `- (void) nudge;` — wake the thread to run the target/selector once. If the thread is `Busy` or `Exited`, the nudge is dropped.
+  - `- (void) cancelWhenIdle;` — safely shut down: wait until not `Busy`, then set the cancel flag and nudge.
+  - `- (void) preempt;` — cancel as soon as possible: set the cancel flag and nudge immediately.
+  - `- (void) blockUntilNoLongerBusy;` — wait until the thread is no longer `Busy` (idle or exited). This is only a snapshot of the past; the thread may become busy again.
+  - `- (void) setInvocation:(NSInvocation *) invocation;` — change the work executed on the next nudge. Blocks if the thread is not idle. Only call from outside. (The `NSThread` category comment says the caller is responsible to call `-retainArguments` on the invocation.)
+- **State inspection:**
+  - `- (BOOL) isIdle;` — check whether the thread currently idles. Snapshot semantics; do not call from within the thread.
+- **Hooks (override in subclasses; called in the locked state within the thread):**
+  - `- (BOOL) willCallMain;` — called before executing the target/selector on each cycle. Return `NO` to skip execution this cycle.
+  - `- (BOOL) willIdle;` — called before the thread goes idle. Return `NO` to run the target/selector again immediately (only sensible if you change the invocation, otherwise main would just run twice).
 
-- `- start` → `void`: Start thread (does NOT execute target/selector yet; waits for nudge)
-- `- nudge` → `void`: Wake thread to execute target/selector (can call from any thread)
-- `- preempt` → `void`: Cancel immediately, don't wait for idle (not from within thread)
-- `- cancelWhenIdle` → `void`: Cancel gracefully when thread becomes idle (not from within thread)
-- `- cancel` → `void`: Cancel thread (can call from within thread)
+#### Behavior notes (from `src/MulleThread.m`)
 
-#### Synchronization
+- Internal state enum (not public API):
 
-- `- mulleJoin` → `void`: Block until thread exits (only after preempt or cancelWhenIdle called)
-- `- blockUntilNoLongerBusy` → `void`: Wait until thread idles (snapshot in time; not from within thread)
-- `- isIdle` → `BOOL`: Check if thread currently idle (snapshot; not from within thread)
+  ```objc
+  typedef NS_ENUM( NSUInteger, MulleThreadState)
+  {
+     MulleThreadStateIdle   = 0,
+     MulleThreadStateBusy   = 1,
+     MulleThreadStateExited = -1 // set by thread when main exits
+  };
+  ```
 
-#### Properties
-
-- `threadLock` (NSConditionLock *, readonly): Access underlying condition lock
-
-#### Customization Points
-
-- `- setInvocation:(NSInvocation *)invocation` → `void`: Change work for next nudge (blocks if not idle)
-- `- willCallMain` → `BOOL`: Called before executing target/selector (in locked state); return NO to skip
-- `- willIdle` → `BOOL`: Called before going idle; return NO to run again immediately (only sensible if invocation changed)
-
-### Thread Lifecycle
-
-```
-Created → Start → Idle → [Nudged] → Running → Idle → ... → Preempted/Cancelled
-                                                          ↓
-                                                       Exited
-```
-
-#### Execution Flow per Nudge
-
-1. Thread receives nudge while idle
-2. Wakes up and acquires lock
-3. Calls `-willCallMain` (return NO to skip execution)
-4. Executes target/selector (if willCallMain returned YES)
-5. Target/selector returns code (GoIdle, ContinueMain, CancelMain)
-6. If GoIdle: calls `-willIdle`, returns to idle if willIdle returns YES
-7. If ContinueMain: runs target/selector again without nudge
-8. If CancelMain: cancels and exits thread
+- `-main` loop: wait for state != `Idle`; inner loop: check `isCancelled`, run target/selector once (through `[super main]`) if `-willCallMain` returns `YES`, release all autorelease pool objects; repeat while the return value is `MulleThreadContinueMain`. After the inner loop, `MulleThreadCancelMain` terminates the thread (state = `Exited`); otherwise `-willIdle` decides whether to go idle or loop again.
+- `+detachNewThreadSelector:toTarget:withObject:` and `+mulleDetachNewThreadWithFunction:argument:` are overridden to `abort()` — detached operation makes no sense with MulleThread; use plain `NSThread` for that.
+- `-cancel` and `-isCancelled` are inherited from `NSThread`. `-cancel` may be called from within the worker thread (unlike the other control methods).
 
 ## 4. Performance Characteristics
 
-- **Wakeup Latency**: O(1) condition variable signal with low overhead
-- **Idle CPU**: Essentially zero (thread blocked on condition, not polling)
-- **Synchronization**: O(1) lock acquisitions using condition locks
-- **Memory**: One NSConditionLock + thread stack per MulleThread
-- **Autorelease**: Managed per-cycle; no accumulation
-- **Context Switching**: Minimal; efficient on multi-core systems
+- **Wakeup latency**: O(1) — a single condition-lock transition (`Idle` → `Busy`) wakes the thread; no polling.
+- **Idle CPU**: essentially zero; the thread blocks on the condition lock.
+- **Synchronization**: constant-time lock/unlock per nudge and per cycle; `-mulleJoin` waits for a single condition.
+- **Memory**: one `NSConditionLock` plus one OS thread stack per `MulleThread`; the autorelease pool is flushed per cycle so no per-cycle memory accumulation.
+- **Thread safety**: the control methods are safe to call from any thread *except* the worker thread itself. The state-machine design makes `-nudge` a benign no-op if the thread is busy or exited.
 
 ## 5. AI Usage Recommendations & Patterns
 
 ### Best Practices
 
-- **Nudge from Different Thread**: Nudge comes from main thread or other worker threads
-- **Graceful Shutdown**: Use `-cancelWhenIdle` for clean shutdown; always call `-mulleJoin` after
-- **Check Idle State**: Use `-isIdle` to verify thread state before operations
-- **Autorelease Pool**: Let MulleThread manage it; don't create nested pools in target/selector
-- **Error Handling**: Target/selector should return CancelMain on fatal errors
-- **Work Queue Pattern**: Use target/selector to process from queue; ContinueMain for batching
+- Create with the inherited factory and start with `-mulleStart` (not `-start`):
+
+  ```objc
+  thread = [MulleThread mulleThreadWithTarget:obj
+                                     selector:@selector( runServer:)
+                                       object:nil];
+  [thread mulleStart];
+  ```
+
+- For a clean shutdown always pair `-cancelWhenIdle` (or `-preempt`) with a following `-mulleJoin`.
+- Have the worker return `MulleThreadGoIdle` when done; use `MulleThreadContinueMain` for batching and `MulleThreadCancelMain` on fatal errors.
+- Let the library manage the autorelease pool; do not create nested pools in the target/selector.
+- If you replace the invocation, call `-retainArguments` on the `NSInvocation` first.
 
 ### Common Pitfalls
 
-- **Calling from Within Thread**: Never call nudge, preempt, or cancelWhenIdle from within target/selector
-- **Join Without Cancel**: Calling -mulleJoin without preempt/cancelWhenIdle blocks forever (thread waits for nudges)
-- **Race Conditions**: isIdle is snapshot; don't assume state unchanged after checking
-- **Ignoring Return Value**: Target/selector return value controls thread flow; always return sensible value
-- **Memory Leaks**: If using invocations, ensure arguments properly retained/released
-- **Threading Deadlock**: Avoid calling blocking operations that wait on this thread from outside
+- **`-mulleJoin` hangs forever if the thread is not canceled**: a perfectly healthy, idle thread waits for nudges indefinitely, so `-mulleJoin` will block. Always `-cancelWhenIdle`/`-preempt` before joining.
+- **`-cancel` from outside while idle is not enough**: when idle the thread is blocked on the lock; it only notices the cancel flag after waking. Either use `-cancelWhenIdle`/`-preempt`, or follow a bare `-cancel` with `-nudge` (see `test/20-thread/cancel.m`).
+- **Do not call `-nudge`, `-preempt`, `-cancelWhenIdle`, `-blockUntilNoLongerBusy`, or `-setInvocation:` from within the worker thread** — they would block/lock against the very thread that holds the lock.
+- **`-isIdle` and `-blockUntilNoLongerBusy` are snapshots**; the thread may become busy again right after they return unless you are sure nothing nudges it.
+- **Never use the `+detach…` methods on MulleThread** (they abort) and avoid `+exit` — it is documented as bad style here.
+- **The target/selector must return `int`**; MulleThread asserts this in debug builds.
 
 ### Idiomatic Usage
 
 ```objc
-// Pattern 1: Create and start thread
-MulleThread *thread = [MulleThread mulleThreadWithTarget:self 
-                                                selector:@selector(workerRun:)
-                                                  object:nil];
-[thread start];
+// Worker returns int; it controls the thread loop
+- (int) runServer:(id) argument
+{
+   if( fatalError)
+      return( MulleThreadCancelMain);   // terminate thread
+   if( moreBatches)
+      return( MulleThreadContinueMain); // run again without nudge
+   return( MulleThreadGoIdle);          // wait for next nudge
+}
+```
 
-// Pattern 2: Wake thread to work
+```objc
+// Outside code: nudge when there is work, shut down cleanly
 [thread nudge];
-
-// Pattern 3: Graceful shutdown
+...
 [thread cancelWhenIdle];
 [thread mulleJoin];
-
-// Pattern 4: Target/selector implementation
-- (int)workerRun:(id)object {
-    // Do work...
-    if (errorCondition) {
-        return MulleThreadCancelMain;  // Abort
-    }
-    return MulleThreadGoIdle;          // Return to idle, wait for nudge
-}
-
-// Pattern 5: Batch processing
-- (int)workerRun:(id)object {
-    [self processNextBatch];
-    if ([self hasMoreWork]) {
-        return MulleThreadContinueMain;  // Process again without nudge
-    }
-    return MulleThreadGoIdle;
-}
 ```
 
 ## 6. Integration Examples
 
-### Example 1: Simple Worker Thread
+Style notes: 3-space indent, Allman braces, aligned declarations, one variable
+per line, `return( expr);`, no dot-syntax, no `alloc/init`/`retain/release`
+outside of `-init`/`-dealloc`, library-managed autorelease pools in the worker.
+
+### Example 1: Create, nudge, and gracefully shut down a worker thread
 
 ```objc
 #import <MulleThread/MulleThread.h>
 
-@interface Worker : NSObject
-@property (nonatomic, retain) MulleThread *thread;
+
+@interface Foo : NSObject
 @end
 
-@implementation Worker
-- (void)start {
-    self.thread = [MulleThread mulleThreadWithTarget:self 
-                                            selector:@selector(run:)
-                                              object:nil];
-    [self.thread start];
-}
 
-- (int)run:(id)object {
-    NSLog(@"Thread doing work");
-    sleep(1);  // Simulate work
-    return MulleThreadGoIdle;
-}
+@implementation Foo
 
-- (void)nudgeThread {
-    [self.thread nudge];
-}
-
-- (void)stop {
-    [self.thread cancelWhenIdle];
-    [self.thread mulleJoin];
-}
-
-- (void)dealloc {
-    [self.thread release];
-    [super dealloc];
-}
-@end
-
-int main() {
-    Worker *worker = [[Worker alloc] init];
-    [worker start];
-    
-    [worker nudgeThread];
-    sleep(2);
-    
-    [worker stop];
-    [worker release];
-    
-    return 0;
-}
-```
-
-### Example 2: Background Task Processing
-
-```objc
-#import <MulleThread/MulleThread.h>
-
-@interface TaskQueue : NSObject
+- (int) runServer:(id) argument
 {
-    NSMutableArray *tasks;
-    MulleThread *workerThread;
+   return( MulleThreadGoIdle);
 }
+
 @end
 
-@implementation TaskQueue
-- (id)init {
-    self = [super init];
-    tasks = [[NSMutableArray alloc] init];
-    workerThread = [MulleThread mulleThreadWithTarget:self
-                                             selector:@selector(processQueue:)
-                                               object:nil];
-    [workerThread start];
-    return self;
-}
 
-- (void)addTask:(NSString *)task {
-    [tasks addObject:task];
-    [workerThread nudge];
-}
-
-- (int)processQueue:(id)object {
-    while ([tasks count] > 0) {
-        NSString *task = [tasks objectAtIndex:0];
-        [tasks removeObjectAtIndex:0];
-        
-        NSLog(@"Processing: %@", task);
-    }
-    return MulleThreadGoIdle;
-}
-
-- (void)dealloc {
-    [workerThread cancelWhenIdle];
-    [workerThread mulleJoin];
-    [workerThread release];
-    [tasks release];
-    [super dealloc];
-}
-@end
-
-int main() {
-    TaskQueue *queue = [[TaskQueue alloc] init];
-    
-    [queue addTask:@"Task 1"];
-    [queue addTask:@"Task 2"];
-    [queue addTask:@"Task 3"];
-    
-    sleep(2);
-    [queue release];
-    
-    return 0;
-}
-```
-
-### Example 3: Checking Thread State
-
-```objc
-#import <MulleThread/MulleThread.h>
-
-int main() {
-    MulleThread *thread = [MulleThread mulleThreadWithTarget:nil
-                                                    selector:NULL
-                                                      object:nil];
-    [thread start];
-    
-    NSLog(@"After start, idle: %s", [thread isIdle] ? "yes" : "no");
-    
-    // Check idle after giving thread time to settle
-    sleep(1);
-    NSLog(@"After sleep, idle: %s", [thread isIdle] ? "yes" : "no");
-    
-    [thread cancelWhenIdle];
-    [thread mulleJoin];
-    
-    return 0;
-}
-```
-
-### Example 4: Continuous Background Work
-
-```objc
-#import <MulleThread/MulleThread.h>
-
-@interface BackgroundWorker : NSObject
+int   main( int argc, const char * argv[])
 {
-    MulleThread *thread;
-    int workCount;
-}
-@end
+   MulleThread   *thread;
+   Foo           *foo;
 
-@implementation BackgroundWorker
-- (id)init {
-    self = [super init];
-    workCount = 0;
-    thread = [MulleThread mulleThreadWithTarget:self
-                                      selector:@selector(work:)
+   foo    = [Foo instance];
+   thread = [MulleThread mulleThreadWithTarget:foo
+                                      selector:@selector( runServer:)
                                         object:nil];
-    [thread start];
-    return self;
-}
+   [thread mulleStart];       // start; worker idles, does not run yet
 
-- (int)work:(id)object {
-    workCount++;
-    NSLog(@"Work iteration: %d", workCount);
-    
-    if (workCount < 5) {
-        // Continue work without waiting for nudge
-        return MulleThreadContinueMain;
-    }
-    
-    // After 5 iterations, wait for nudge
-    return MulleThreadGoIdle;
-}
+   [thread nudge];            // wake up and run target/selector once
 
-- (void)startWork {
-    [thread nudge];
-}
+   [thread cancelWhenIdle];   // safe shutdown when idle
+   [thread mulleJoin];        // wait until the thread has exited
 
-- (void)dealloc {
-    [thread cancelWhenIdle];
-    [thread mulleJoin];
-    [thread release];
-    [super dealloc];
-}
-@end
-
-int main() {
-    BackgroundWorker *worker = [[BackgroundWorker alloc] init];
-    
-    [worker startWork];
-    sleep(2);
-    
-    [worker release];
-    return 0;
+   return( 0);
 }
 ```
 
-### Example 5: Coordinated Multiple Threads
+### Example 2: Repeated work synchronized with `blockUntilNoLongerBusy`
 
 ```objc
 #import <MulleThread/MulleThread.h>
 
-@interface Coordinator : NSObject
+
+@interface Foo : NSObject
 {
-    NSMutableArray *threads;
+   NSUInteger   _count;
 }
 @end
 
-@implementation Coordinator
-- (id)init {
-    self = [super init];
-    threads = [[NSMutableArray alloc] init];
-    
-    // Create 3 worker threads
-    for (int i = 0; i < 3; i++) {
-        MulleThread *thread = [MulleThread mulleThreadWithTarget:self
-                                                       selector:@selector(work:)
-                                                         object:[NSNumber numberWithInt:i]];
-        [thread start];
-        [threads addObject:thread];
-    }
-    
-    return self;
-}
 
-- (int)work:(NSNumber *)threadId {
-    NSLog(@"Thread %@ working", threadId);
-    sleep(1);
-    return MulleThreadGoIdle;
-}
+@implementation Foo
 
-- (void)wakeAll {
-    for (MulleThread *thread in threads) {
-        [thread nudge];
-    }
-}
-
-- (void)stopAll {
-    for (MulleThread *thread in threads) {
-        [thread cancelWhenIdle];
-    }
-    for (MulleThread *thread in threads) {
-        [thread mulleJoin];
-    }
-}
-
-- (void)dealloc {
-    [self stopAll];
-    [threads release];
-    [super dealloc];
-}
-@end
-
-int main() {
-    Coordinator *coord = [[Coordinator alloc] init];
-    
-    [coord wakeAll];
-    sleep(3);
-    
-    [coord stopAll];
-    [coord release];
-    
-    return 0;
-}
-```
-
-### Example 6: Error Handling with CancelMain
-
-```objc
-#import <MulleThread/MulleThread.h>
-
-@interface SafeWorker : NSObject
+- (int) runServer:(id) argument
 {
-    MulleThread *thread;
+   mulle_printf( "* %td\n", _count++);
+   return( MulleThreadGoIdle);
 }
+
 @end
 
-@implementation SafeWorker
-- (id)init {
-    self = [super init];
-    thread = [MulleThread mulleThreadWithTarget:self
-                                      selector:@selector(work:)
+
+int   main( int argc, const char * argv[])
+{
+   MulleThread   *thread;
+   NSUInteger    i;
+   Foo           *foo;
+
+   foo    = [Foo instance];
+   thread = [MulleThread mulleThreadWithTarget:foo
+                                      selector:@selector( runServer:)
                                         object:nil];
-    [thread start];
-    return self;
+   [thread mulleStart];
+
+   for( i = 0; i < 3; i++)
+   {
+      [thread blockUntilNoLongerBusy];   // wait until previous iteration finished
+      [thread nudge];
+   }
+   [thread blockUntilNoLongerBusy];
+   [thread cancelWhenIdle];
+   [thread mulleJoin];
+
+   return( 0);
+}
+```
+
+### Example 3: Worker that cancels itself, then join
+
+```objc
+#import <MulleThread/MulleThread.h>
+
+
+@interface Foo : NSObject
+@end
+
+
+@implementation Foo
+
+- (int) runServer:(id) argument
+{
+   [[NSThread currentThread] cancel];   // request cancellation from within
+   return( MulleThreadGoIdle);
 }
 
-- (int)work:(id)object {
-    NSError *error = nil;
-    
-    // Simulate work that might fail
-    BOOL success = [self performWorkWithError:&error];
-    
-    if (!success) {
-        NSLog(@"Error: %@", [error localizedDescription]);
-        return MulleThreadCancelMain;  // Abort thread on error
-    }
-    
-    NSLog(@"Work completed successfully");
-    return MulleThreadGoIdle;
-}
+@end
 
-- (BOOL)performWorkWithError:(NSError **)error {
-    // Simulate work
-    return YES;  // Or NO on error
-}
 
-- (void)nudge {
-    [thread nudge];
-}
+int   main( int argc, const char * argv[])
+{
+   MulleThread   *thread;
+   Foo           *foo;
 
-- (void)dealloc {
-    [thread cancelWhenIdle];
-    [thread mulleJoin];
-    [thread release];
-    [super dealloc];
+   foo    = [Foo instance];
+   thread = [MulleThread mulleThreadWithTarget:foo
+                                      selector:@selector( runServer:)
+                                        object:nil];
+   [thread mulleStart];
+   [thread nudge];
+
+   [thread mulleJoin];   // thread cancels itself and exits, join returns
+
+   return( 0);
+}
+```
+
+### Example 4: Batching with `MulleThreadContinueMain` and a subclass hook
+
+```objc
+#import <MulleThread/MulleThread.h>
+
+
+@interface BatchWorker : NSObject
+{
+   NSUInteger   _count;
 }
 @end
 
-int main() {
-    SafeWorker *worker = [[SafeWorker alloc] init];
-    
-    [worker nudge];
-    sleep(1);
-    
-    [worker release];
-    return 0;
+
+@implementation BatchWorker
+
+- (BOOL) willCallMain
+{
+   // this hook runs in the worker thread, in the locked state
+   mulle_printf( "willCallMain\n");
+   return( [super willCallMain]);
+}
+
+- (int) runBatch:(id) argument
+{
+   mulle_printf( "batch %td\n", _count++);
+   if( _count < 5)
+      return( MulleThreadContinueMain);   // run again without a nudge
+   return( MulleThreadGoIdle);
+}
+
+@end
+
+
+int   main( int argc, const char * argv[])
+{
+   MulleThread   *thread;
+   BatchWorker   *worker;
+
+   worker = [BatchWorker instance];
+   thread = [MulleThread mulleThreadWithTarget:worker
+                                      selector:@selector( runBatch:)
+                                        object:nil];
+   [thread mulleStart];
+   [thread nudge];        // runBatch then repeats 4 more times automatically
+
+   [thread blockUntilNoLongerBusy];
+   [thread cancelWhenIdle];
+   [thread mulleJoin];
+
+   return( 0);
+}
+```
+
+### Example 5: Swapping the work with `setInvocation:`
+
+```objc
+#import <MulleThread/MulleThread.h>
+
+
+@interface Foo : NSObject
+@end
+
+
+@implementation Foo
+
+- (int) firstJob:(id) argument
+{
+   return( MulleThreadGoIdle);
+}
+
+- (int) secondJob:(id) argument
+{
+   return( MulleThreadGoIdle);
+}
+
+@end
+
+
+int   main( int argc, const char * argv[])
+{
+   NSMethodSignature   *signature;
+   NSInvocation        *invocation;
+   MulleThread         *thread;
+   Foo                 *foo;
+
+   foo    = [Foo instance];
+   thread = [MulleThread mulleThreadWithTarget:foo
+                                      selector:@selector( firstJob:)
+                                        object:nil];
+   [thread mulleStart];
+
+   [thread nudge];
+   [thread blockUntilNoLongerBusy];   // ensure idle before changing work
+
+   // point the next nudge at -secondJob:
+   signature  = [Foo instanceMethodSignatureForSelector:@selector( secondJob:)];
+   invocation = [NSInvocation invocationWithMethodSignature:signature];
+   [invocation setTarget:foo];
+   [invocation setSelector:@selector( secondJob:)];
+   [invocation retainArguments];      // arguments survive across threads
+   [thread setInvocation:invocation];
+   [thread nudge];
+   [thread blockUntilNoLongerBusy];
+
+   [thread cancelWhenIdle];
+   [thread mulleJoin];
+
+   return( 0);
 }
 ```
 
 ## 7. Dependencies
 
-- MulleObjC (NSThread, NSConditionLock)
-- MulleFoundationBase
+Direct `mulle-sde` library dependencies (from `.mulle/etc/sourcetree/config`):
+
+- `MulleObjC` — provides `NSThread` and `NSConditionLock`, and the factory method `+mulleThreadWithTarget:selector:object:`
+- `mulle-objc-list` (tooling/CI dependency; `no-link` mark, not linked)
+
+## 8. Notes
+
+This document was regenerated from the public header `src/MulleThread.h`
+(version macro `MULLE_THREAD_VERSION`), the implementation `src/MulleThread.m`,
+the tests in `test/20-thread`, and `README.md`. The existing `index.md` was
+committed in `241d7ba` (2026-09-04) together with the test rework; no library
+source changes have occurred since, but the previous document was rewritten to
+use verbatim signatures and correct API details.
