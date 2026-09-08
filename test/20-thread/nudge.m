@@ -7,10 +7,13 @@ static void   test_printf( char *format, ...)
 
    va_start( args, format);
 #ifndef MULLE_TEST
-   mulle_printf( "%lx : %.9f ", mulle_thread_self(), mulle_absolutetime_now());
+   mulle_fprintf( stderr, "%lx : %.9f ", mulle_thread_self(), mulle_absolutetime_now());
 #endif
-   vprintf( format, args);
-   fflush( stdout);
+   // trace goes to stderr: this test races two threads whose interleaved
+   // output is inherently non-deterministic, so there is no stable stdout
+   // to compare against (see removed nudge.stdout).
+   vfprintf( stderr, format, args);
+   fflush( stderr);
    va_end( args);
 }
 
