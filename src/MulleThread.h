@@ -38,7 +38,7 @@
 # endif
 #endif
 
-#define MULLE_THREAD_VERSION   ((0UL << 20) | (2 << 8) | 4)
+#define MULLE_THREAD_VERSION   ((0UL << 20) | (2 << 8) | 5)
 
 
 #import "import.h"
