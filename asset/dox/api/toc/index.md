@@ -424,6 +424,8 @@ Direct `mulle-sde` library dependencies (from `.mulle/etc/sourcetree/config`):
 This document was regenerated from the public header `src/MulleThread.h`
 (version macro `MULLE_THREAD_VERSION`), the implementation `src/MulleThread.m`,
 the tests in `test/20-thread`, and `README.md`. The existing `index.md` was
-committed in `241d7ba` (2026-09-04) together with the test rework; no library
-source changes have occurred since, but the previous document was rewritten to
-use verbatim signatures and correct API details.
+committed in `241d7ba` (2026-09-04) together with the test rework. Since then
+the only source changes are a version bump of `MULLE_THREAD_VERSION` to `2.5`
+and of the minimum `MulleObjC` version to `30.2`; there are no public API
+changes. The previous document was rewritten to use verbatim signatures and
+correct API details.
